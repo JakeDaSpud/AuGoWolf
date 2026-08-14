@@ -12,16 +12,16 @@
 </head>
 <body>
     <header class="align-self-end">
-        <img src="./assets/logo-square.png" style="height: 2.5em; width: auto; object-fit: cover; filter: brightness(0) invert(1);">
+        <img src="./assets/logo-square.png" style="height: 2.5em; width: auto; object-fit: cover; filter: brightness(0) saturate(100%) invert(93%) sepia(1%) saturate(3051%) hue-rotate(325deg) brightness(101%) contrast(108%);">
         AuGoWolf
     </header>
     
 
-    <div id="idUploadFile" name="nameUploadFile">
+    <div id="idUploadFile" name="nameUploadFile" class="centre">
         <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
     </div>
 
-    <div id="idAddLabel">
+    <div id="idAddLabel" class="centre">
         <input type="text" name="" id="idLabelText" placeholder="View Label">
         <button id="idAddLabelBtn" type="button">Add View</button>
     </div>
@@ -29,7 +29,7 @@
     <!-- TODO -->
     <!-- Add column / row dimension options for layout -->
 
-    <div id="idVideoControls" hidden>
+    <div id="idVideoControls" hidden class="centre">
         <button id="idVideoPlayBtn" type="button">Play</button>
         <button id="idVideoPauseBtn" type="button">Pause</button>
         <button id="idVideoRestartBtn" type="button">Restart</button>
@@ -50,7 +50,7 @@
     </template>
 
 
-    <div id="idViewsContainer"></div>
+    <main id="idViewsContainer"></main>
     
 
     <footer>
