@@ -1,0 +1,75 @@
+:root {
+    /* All Pico-8 Colours from https://lospec.com/palette-list/pico-8 */
+    --p8-black: #000000;
+    --p8-navy: #1D2B53;
+    --p8-wine: #7E2553;
+    --p8-green: #008751;
+
+    --p8-brown: #AB5236;
+    --p8-dark-grey: #5F574F;
+    --p8-grey: #C2C3C7;
+    --p8-white: #FFF1E8;
+    
+    --p8-red: #FF004D;
+    --p8-orange: #FFA300;
+    --p8-yellow: #FFEC27;
+    --p8-lime: #00E436;
+    
+    --p8-blue: #29ADFF;
+    --p8-purple: #83769C;
+    --p8-pink: #FF77A8;
+    --p8-peach: #FFCCAA;
+}
+
+body {
+    background-color: var(--p8-white);
+    font-size: 16px;
+}
+
+header {
+    width: 100;
+    padding: 16px;
+    
+    background-color: var(--p8-orange);
+    color: var(--p8-white);
+    font-size: 32px;
+    font-family: monospace;
+    font-weight: bolder;
+}
+
+footer {
+    width: 100%;
+    background-color: var(--p8-orange);
+
+    text-align: center;
+    float:inline-end;
+    display: block;
+    position: fixed;
+    bottom: 0px;
+}
+
+#idViewsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    padding: 1rem;
+}
+
+.view {
+    border: 2px solid var(--p8-dark-grey);
+    border-radius: 8px;
+    padding: 0.5rem;
+    background-color: var(--p8-peach);
+}
+
+.viewLabel {
+    margin: 0 0 0.5rem 0;
+    text-align: center;
+    font-weight: bold;
+}
+
+.viewImage,
+.viewVideo {
+    display: block;
+    max-width: 100%;
+}

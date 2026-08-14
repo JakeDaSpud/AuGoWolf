@@ -1,0 +1,63 @@
+<!-- Made by Jake O'Reilly -->
+<!-- https://jakedaspud.github.io/JakeDaSpud/ -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0", lang="en">
+    <title>AuGoWolf</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="align-self-end">
+        <img src="./assets/logo-square.png" style="height: 2.5em; width: auto; object-fit: cover; filter: brightness(0) invert(1);">
+        AuGoWolf
+    </header>
+    
+
+    <div id="idUploadFile" name="nameUploadFile">
+        <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
+    </div>
+
+    <div id="idAddLabel">
+        <input type="text" name="" id="idLabelText" placeholder="View Label">
+        <button id="idAddLabelBtn" type="button">Add View</button>
+    </div>
+
+    <!-- TODO -->
+    <!-- Add column / row dimension options for layout -->
+
+    <div id="idVideoControls" hidden>
+        <button id="idVideoPlayBtn" type="button">Play</button>
+        <button id="idVideoPauseBtn" type="button">Pause</button>
+        <button id="idVideoRestartBtn" type="button">Restart</button>
+    </div>
+
+
+    <!-- One cloned per view, kept out of render tree until cloned -->
+    <template id="idViewTemplate">
+        <div class="view">
+            <p class="viewLabel"></p>
+            <!-- TODO -->
+            <!-- add dropdown enum for shaders -->
+            <!-- add % slider for opacity/severity of shader -->
+            <img class="viewImage" hidden>
+            <video class="viewVideo" hidden></video>
+            <!-- add  -->
+        </div>
+    </template>
+
+
+    <div id="idViewsContainer"></div>
+    
+
+    <footer>
+        <a href="https://jakedaspud.github.io/JakeDaSpud/" target="_blank">jake o'reilly</a> | 2026
+    </footer>
+
+
+    <script src="script.js"></script>
+</body>
+</html>
