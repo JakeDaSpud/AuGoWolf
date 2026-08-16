@@ -21,7 +21,6 @@
     --p8-peach: #FFCCAA;
 
     /* Layout */
-    --grid-rows: 4;
     --grid-columns: 3;
 }
 
@@ -46,7 +45,6 @@ body {
 
 header {
     width: 100%;
-    /*margin-bottom: 16px;*/
     padding: 16px;
     
     background-color: var(--p8-orange);
@@ -89,8 +87,8 @@ footer a:hover {
 #idViewsContainer {
     display: grid;
 
-    grid-template-rows: repeat(var(--grid-rows, 4), 1fr);
     grid-template-columns: repeat(var(--grid-columns, 3), 1fr);
+    grid-template-rows: repeat(1, 1fr);
     
     gap: 1rem;
     padding: 1rem;
@@ -115,7 +113,6 @@ footer a:hover {
     border: 2px solid var(--p8-dark-grey);
     border-radius: 8px;
     padding: 0.5rem;
-    /*background-color: var(--p8-peach);*/
 
     min-width: 0;
     min-height: 0;

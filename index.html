@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 6hr so far -->
+<!-- 8hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -8,7 +8,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0", lang="en">
     <title>AuGoWolf</title>
-    <link rel="shortcut icon" href="assets/logo-float.png" type="image/x-icon">
+    <link rel="shortcut icon" href="assets/logo-ico.png" type="image/x-icon">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -19,40 +19,45 @@
     </header>
     
     <main>
-        <div name="nameFileSettings">
-            <h2>File Settings</h2>
-
-            <div id="idUploadFile" name="nameUploadFile">
-                <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
+        <div id="idControls">
+            <div id="idFullscreenControls">
+                <div id="fileSettings">
+                    <h2>File Settings</h2>
+    
+                    <div id="idUploadFile" name="nameUploadFile">
+                        <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
+                    </div>
+                </div>
+    
+                <div id="viewSettings">
+                    <h2>View Layout</h2>
+                    
+                    <input type="text" name="nameViewLabelText" id="idLabelText" placeholder="View Label">
+                    
+                    <button id="idAddLabelBtn" type="button">Add View</button>
+                    <button id="idAddEmptyViewBtn" type="button">Add Empty</button>
+    
+                    <p>
+                        Visible Views: <span id="idVisibleViewCount">0</span><br>
+                        Empty Views: <span id="idEmptyViewCount">0</span><br>
+                        Total Views: <span id="idTotalViewCount">0</span>
+                    </p>
+    
+                    <div>
+                        <label for="idColumnAmount">Columns (1 or more)</label>
+                        <input type="number" name="nameColumnLabel" id="idColumnAmount" min="1" value="3">
+                    </div>
+    
+                    <div>
+                        <label for="idLayoutUrl">Your layout URL: </label>
+                        <input type="text" name="nameLayoutUrl" id="idLayoutUrl">
+                    </div>
+    
+                    <button id="idEnterFullscreen" type="button">Enter Fullscreen</button>
+                </div>
             </div>
 
-            <div id="idAddLabel">
-                <input type="text" name="nameViewLabelText" id="idLabelText" placeholder="View Label">
-                
-                <button id="idAddLabelBtn" type="button">Add View</button>
-                <button id="idAddEmptyViewBtn" type="button">Add Empty</button>
-
-                <div>
-                    <p>Visible Views: <span id="idVisibleViewCount">0</span></p>
-                    <p>Empty Views: <span id="idEmptyViewCount">0</span></p>
-                    <p>Total Views: <span id="idTotalViewCount">0</span></p>
-                </div>
-
-                <div>
-                    <label for="idColumnAmount">Columns (1 or more)</label>
-                    <input type="number" name="nameColumnLabel" id="idColumnAmount" min="1" value="3">
-                </div>
-                
-                <div>
-                    <label for="idRowAmount">Rows (1 or more)</label>
-                    <input type="number" name="nameRowLabel" id="idRowAmount" min="1" value="4">
-                </div>
-
-                <div>
-                    <label for="idLayoutUrl">Your layout URL: </label>
-                    <input type="text" name="nameLayoutUrl" id="idLayoutUrl">
-                </div>
-            </div>
+            <button id="idExitFullscreen" type="button" hidden>Exit Fullscreen</button>
 
             <div id="idVideoControls" hidden class="centre">
                 <div>
@@ -60,8 +65,16 @@
                     <span>/</span>
                     <span id="idVideoLength">mm:ss</span>
                 </div>
-                <button id="idVideoPlayBtn" type="button">Play</button>
-                <button id="idVideoRestartBtn" type="button">Restart</button>
+                <div>
+                    <button id="idVideoPlayBtn" type="button">Play</button>
+                    <button id="idVideoRestartBtn" type="button">Restart</button>
+                </div>
+                <div>
+                    <button id="idVideoSubtract10Btn">-10s</button>
+                    <button id="idVideoSubtract5Btn">-5s</button>
+                    <button id="idVideoAdd5Btn">+5s</button>
+                    <button id="idVideoAdd10Btn">+10s</button>
+                </div>
                 <button id="idVideoMuteBtn" type="button">Mute</button>
                 <button id="idVideoLoopBtn" type="button">Loop</button>
             </div>

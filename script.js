@@ -4,11 +4,14 @@
 
 // Shader matrices
 
+const idControls = document.getElementById("idControls");
+const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
 
 const idLabelText = document.getElementById("idLabelText");
 const idAddLabelBtn = document.getElementById("idAddLabelBtn");
 const idAddEmptyViewBtn = document.getElementById("idAddEmptyViewBtn");
+
 const idTotalViewCount = document.getElementById("idTotalViewCount");
 const idVisibleViewCount = document.getElementById("idVisibleViewCount");
 const idEmptyViewCount = document.getElementById("idEmptyViewCount");
@@ -17,17 +20,27 @@ const idEmptyViewCount = document.getElementById("idEmptyViewCount");
 const idVideoControls = document.getElementById("idVideoControls");
 const idVideoTimestamp = document.getElementById("idVideoTimestamp");
 const idVideoLength = document.getElementById("idVideoLength");
+
 const idVideoPlayBtn = document.getElementById("idVideoPlayBtn");
 const idVideoRestartBtn = document.getElementById("idVideoRestartBtn");
+
+const idVideoSubtract5Btn = document.getElementById("idVideoSubtract5Btn");
+const idVideoSubtract10Btn = document.getElementById("idVideoSubtract10Btn");
+
+const idVideoAdd5Btn = document.getElementById("idVideoAdd5Btn");
+const idVideoAdd10Btn = document.getElementById("idVideoAdd10Btn");
+
 const idVideoMuteBtn = document.getElementById("idVideoMuteBtn");
 const idVideoLoopBtn = document.getElementById("idVideoLoopBtn");
 
 const idViewTemplate = document.getElementById("idViewTemplate");
 const idEmptyViewTemplate = document.getElementById("idEmptyViewTemplate");
 const idViewsContainer = document.getElementById("idViewsContainer");
-const idRowAmount = document.getElementById("idRowAmount");
 const idColumnAmount = document.getElementById("idColumnAmount");
 const idLayoutUrl = document.getElementById("idLayoutUrl");
+
+const idEnterFullscreen = document.getElementById("idEnterFullscreen");
+const idExitFullscreen = document.getElementById("idExitFullscreen");
 
 const views = []; // { root, label, image, video }
 let currentFile = null;
@@ -35,6 +48,7 @@ let currentFile = null;
 const VIDEO_MAX_DESYNC = 0.1; // seconds
 let videoMasterInstance = null;
 let videoCurrentTime = 0; // seconds
+let videoDuration = 0; // seconds
 let videoPlaying = false;
 let videoMuted = false;
 let videoLoops = false;
@@ -115,7 +129,13 @@ function deleteView(viewId) {
     
     const idx = views.findIndex(v => v.root.id === viewId);
     if (idx !== -1) {
+        const wasMaster = views[idx].video && views[idx].video === videoMasterInstance;
         views.splice(idx, 1);
+
+        if (wasMaster) {
+            videoMasterInstance = null;
+            createMasterVideoInstance();
+        }
     }
 
     setViewCounts();
@@ -123,24 +143,26 @@ function deleteView(viewId) {
 
 
 function updateGridShape() {
-    const rows = Math.max(1, Number(idRowAmount.value));
-    if (rows == 1) { idRowAmount.innerHTML = "1" }; 
     const columns = Math.max(1, Number(idColumnAmount.value));
     if (columns == 1) { idColumnAmount.innerHTML = "1" };
 
-    idViewsContainer.style.setProperty("--grid-rows", rows);
     idViewsContainer.style.setProperty("--grid-columns", columns);
 }
 
 
 function createMasterVideoInstance() {
-    if (!videoMasterInstance && views.length > 0) {
-        videoMasterInstance = views[0].video;
+    if (!videoMasterInstance) {
+        const viewWithVideo = views.find((v) => v.video);
+        if (!viewWithVideo) return null;
+
+        videoMasterInstance = viewWithVideo.video;
+        videoMasterInstance.muted = videoMuted;
 
         videoMasterInstance.addEventListener("timeupdate", () => {
             videoCurrentTime = videoMasterInstance.currentTime;
 
             views.forEach(({ video }) => {
+                if (!video) return;
                 if (video === videoMasterInstance) return;
 
                 const difference = Math.abs(video.currentTime - videoCurrentTime);
@@ -182,16 +204,20 @@ function showFileInView({ image, video }, file) {
         image.hidden = true;
         idVideoControls.hidden = false;
 
-        // MAYBE MAKE ONLY ONE VIDEO PLAY AUDIO?
-        // IT WORKS BC THEY ALL SYNCED, BUT COULD BE INEFFICIENT?
-
         video.src = url;
         video.hidden = false;
-        
-        video.muted = videoMuted;
-        video.loop = videoLoops;
 
-        if (videoMasterInstance) {
+        if (video === videoMasterInstance) {
+            video.muted = videoMuted; // Only the Master Instance can be unmuted
+        } else {
+            video.muted = true;
+        }
+
+        if (
+            videoMasterInstance &&
+            video !== videoMasterInstance &&
+            Number.isFinite(videoMasterInstance.currentTime)
+        ) {
             video.currentTime = videoMasterInstance.currentTime;
         }
 
@@ -204,7 +230,6 @@ function showFileInView({ image, video }, file) {
 
 function handleAddLabel() {
     const label = idLabelText.value.trim();
-    //if (!label) return;
 
     addView(label);
     idLabelText.value = "";
@@ -231,7 +256,6 @@ function handlePlayVideo() {
 
         views.forEach(({ video }) => {
             if (video) {
-                video.currentTime = master.currentTime;
                 video.play();
             }
         });
@@ -273,9 +297,7 @@ function handleMuteVideo() {
 
     idVideoMuteBtn.innerHTML = videoMuted ? "Unmute" : "Mute";
     
-    views.forEach(({ video }) => {
-        if (video) video.muted = videoMuted;
-    });
+    if (videoMasterInstance) videoMasterInstance.muted = videoMuted;
 }
 
 
@@ -284,9 +306,15 @@ function handleLoopVideo() {
 
     idVideoLoopBtn.innerHTML = videoLoops ? "Stop Looping" : "Loop";
 
-    views.forEach(({ video }) => {
-        if (video) video.loop = videoLoops;
-    });
+    if (videoMasterInstance) {
+        videoMasterInstance.loop = videoLoops;
+    }
+}
+
+
+function skip(timeInSeconds) {
+    videoCurrentTime = clamp(videoCurrentTime + timeInSeconds, 0, videoDuration);
+    if (videoMasterInstance) videoMasterInstance.currentTime = videoCurrentTime;
 }
 
 
@@ -297,10 +325,10 @@ function setVideoDuration(file) {
     const tempVideo = document.createElement('video');
 
     tempVideo.addEventListener('loadedmetadata', () => {
-        const durationInSeconds = tempVideo.duration;
+        videoDuration = tempVideo.duration;
         URL.revokeObjectURL(videoUrl);
 
-        idVideoLength.innerHTML = timeSecToMinSec(durationInSeconds);
+        idVideoLength.innerHTML = timeSecToMinSec(videoDuration);
     });
 
     tempVideo.src = videoUrl;
@@ -313,6 +341,22 @@ function setCurrentTimestamp() {
     videoCurrentTime = videoMasterInstance.currentTime;
 
     idVideoTimestamp.innerHTML = timeSecToMinSec(videoCurrentTime);
+}
+
+
+function syncVideos() {
+    if (!videoMasterInstance) return;
+    
+    views.forEach(({ video }) => {
+        if (video) {
+            video.currentTime = videoMasterInstance.currentTime;
+            if (videoPlaying) {
+                video.play();
+            } else {
+                video.pause();
+            }
+        } 
+    });
 }
 
 
@@ -330,10 +374,29 @@ function timeSecToMinSec(timeInSeconds) {
 }
 
 
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+
 function setViewCounts() {
     idTotalViewCount.innerHTML = totalCurrentVisibleViews + totalCurrentEmptyViews;
     idVisibleViewCount.innerHTML = totalCurrentVisibleViews;
     idEmptyViewCount.innerHTML = totalCurrentEmptyViews;
+}
+
+
+function enterFullscreen() {
+    idFullscreenControls.hidden = true;
+    // turn off fullscreen for all visible views
+    idExitFullscreen.hidden = false;
+}
+
+
+function exitFullscreen() {
+    idExitFullscreen.hidden = true;
+    // turn off fullscreen for all visible views
+    idFullscreenControls.hidden = false;
 }
 
 
@@ -343,14 +406,22 @@ function addAllEventListeners() {
 
     idVideoPlayBtn.addEventListener("click", handlePlayVideo);
     idVideoRestartBtn.addEventListener("click", handleRestartVideo);
+
+    idVideoSubtract5Btn.addEventListener("click", () => { skip(-5); });
+    idVideoSubtract10Btn.addEventListener("click", () => { skip(-10); });
+    idVideoAdd5Btn.addEventListener("click", () => { skip(5); });
+    idVideoAdd10Btn.addEventListener("click", () => { skip(10); });
+
     idVideoMuteBtn.addEventListener("click", handleMuteVideo);
     idVideoLoopBtn.addEventListener("click", handleLoopVideo);
 
-    idRowAmount.addEventListener("input", updateGridShape);
     idColumnAmount.addEventListener("input", updateGridShape);
 
     idLayoutUrl.addEventListener("onclick", copyUrl);
 
+    idEnterFullscreen.addEventListener("click", enterFullscreen);
+    idExitFullscreen.addEventListener("click", exitFullscreen);
+    
     idLabelText.addEventListener("keydown", (e) => {
         if (e.key === "Enter") handleAddLabel();
     });
