@@ -106,6 +106,25 @@ footer a:hover {
     min-height: 0;
 }
 
+.emptyView {
+    opacity: 0.05;
+    align-items: center;
+    align-content: center;
+    text-align: center;
+
+    border: 2px solid var(--p8-dark-grey);
+    border-radius: 8px;
+    padding: 0.5rem;
+    /*background-color: var(--p8-peach);*/
+
+    min-width: 0;
+    min-height: 0;
+}
+
+.emptyView:hover {
+    opacity: 1;
+}
+
 .viewLabel {
     margin: 0 0 0.5rem 0;
     text-align: center;

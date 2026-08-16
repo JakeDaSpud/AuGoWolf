@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 5hr so far -->
+<!-- 6hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -30,6 +30,13 @@
                 <input type="text" name="nameViewLabelText" id="idLabelText" placeholder="View Label">
                 
                 <button id="idAddLabelBtn" type="button">Add View</button>
+                <button id="idAddEmptyViewBtn" type="button">Add Empty</button>
+
+                <div>
+                    <p>Visible Views: <span id="idVisibleViewCount">0</span></p>
+                    <p>Empty Views: <span id="idEmptyViewCount">0</span></p>
+                    <p>Total Views: <span id="idTotalViewCount">0</span></p>
+                </div>
 
                 <div>
                     <label for="idColumnAmount">Columns (1 or more)</label>
@@ -76,6 +83,13 @@
                 <input type="range" name="nameShaderSeverity" id="idShaderSeverity" min="0.0" max="1.0" step="0.01">
                 <img class="viewImage" hidden>
                 <video class="viewVideo" hidden></video>
+                <button class="deleteBtn" type="button">Delete</button>
+            </div>
+        </template>
+
+        <!-- No name required, just used for forcing layout shapes -->
+        <template id="idEmptyViewTemplate">
+            <div class="emptyView">
                 <button class="deleteBtn" type="button">Delete</button>
             </div>
         </template>

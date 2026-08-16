@@ -8,9 +8,13 @@ const idFileInput = document.getElementById("idFileInput");
 
 const idLabelText = document.getElementById("idLabelText");
 const idAddLabelBtn = document.getElementById("idAddLabelBtn");
-const idVideoControls = document.getElementById("idVideoControls");
+const idAddEmptyViewBtn = document.getElementById("idAddEmptyViewBtn");
+const idTotalViewCount = document.getElementById("idTotalViewCount");
+const idVisibleViewCount = document.getElementById("idVisibleViewCount");
+const idEmptyViewCount = document.getElementById("idEmptyViewCount");
 
 // All video controls
+const idVideoControls = document.getElementById("idVideoControls");
 const idVideoTimestamp = document.getElementById("idVideoTimestamp");
 const idVideoLength = document.getElementById("idVideoLength");
 const idVideoPlayBtn = document.getElementById("idVideoPlayBtn");
@@ -19,6 +23,7 @@ const idVideoMuteBtn = document.getElementById("idVideoMuteBtn");
 const idVideoLoopBtn = document.getElementById("idVideoLoopBtn");
 
 const idViewTemplate = document.getElementById("idViewTemplate");
+const idEmptyViewTemplate = document.getElementById("idEmptyViewTemplate");
 const idViewsContainer = document.getElementById("idViewsContainer");
 const idRowAmount = document.getElementById("idRowAmount");
 const idColumnAmount = document.getElementById("idColumnAmount");
@@ -34,7 +39,9 @@ let videoPlaying = false;
 let videoMuted = false;
 let videoLoops = false;
 
-let viewCount = 0;
+let viewUidTracker = 0; // Actually the UID tracker
+let totalCurrentVisibleViews = 0;
+let totalCurrentEmptyViews = 0;
 
 
 function addView(label) {
@@ -46,17 +53,18 @@ function addView(label) {
     const new_label = clone.querySelector(".viewLabel");
     const delete_btn = clone.querySelector(".deleteBtn");
 
-    root.id = "idView-" + viewCount;
-    image.id = "idViewImage-" + viewCount;
-    video.id = "idViewVideo-" + viewCount;
-    delete_btn.id = "idDeleteBtn-" + viewCount;
+    root.id = "idView-" + viewUidTracker;
+    image.id = "idViewImage-" + viewUidTracker;
+    video.id = "idViewVideo-" + viewUidTracker;
+    delete_btn.id = "idDeleteBtn-" + viewUidTracker;
     new_label.textContent = label;
     
     delete_btn.addEventListener("click", () => {
         deleteView(root.id);
     });
 
-    viewCount++;
+    viewUidTracker++;
+    totalCurrentVisibleViews++;
 
     idViewsContainer.appendChild(clone);
     const view = { root, label, image, video };
@@ -71,16 +79,46 @@ function addView(label) {
 }
 
 
+function addEmptyView() {
+    const clone = idEmptyViewTemplate.content.cloneNode(true);
+
+    const root = clone.querySelector(".emptyView");
+    const delete_btn = clone.querySelector(".deleteBtn");
+
+    root.id = "idView-" + viewUidTracker;
+    delete_btn.id = "idDeleteBtn-" + viewUidTracker;
+
+    delete_btn.addEventListener("click", () => {
+        deleteView(root.id);
+    });
+
+    viewUidTracker++;
+    totalCurrentEmptyViews++;
+
+    idViewsContainer.appendChild(clone);
+    const view = { root };
+    views.push(view);
+}
+
+
 function deleteView(viewId) {
     const view_to_delete = document.getElementById(viewId);
     if (!view_to_delete) return;
 
-    view_to_delete.remove();
+    if (view_to_delete.className == "view") {
+        totalCurrentVisibleViews--;
+    } else if (view_to_delete.className == "emptyView") {
+        totalCurrentEmptyViews--;
+    }
 
+    view_to_delete.remove();
+    
     const idx = views.findIndex(v => v.root.id === viewId);
     if (idx !== -1) {
         views.splice(idx, 1);
     }
+
+    setViewCounts();
 }
 
 
@@ -126,6 +164,7 @@ function showFileInView({ image, video }, file) {
     const isVideo = file.type.startsWith("video/");
     
     if (isImage) {
+        if (!image || !video) return;
         video.pause();
         video.removeAttribute("src");
         video.hidden = true;
@@ -136,6 +175,7 @@ function showFileInView({ image, video }, file) {
     }
 
     else if (isVideo) {
+        if (!image || !video) return;
         createMasterVideoInstance();
 
         image.removeAttribute("src");
@@ -164,11 +204,19 @@ function showFileInView({ image, video }, file) {
 
 function handleAddLabel() {
     const label = idLabelText.value.trim();
-    if (!label) return;
+    //if (!label) return;
 
     addView(label);
     idLabelText.value = "";
     idLabelText.focus();
+    setViewCounts();
+}
+
+
+function handleAddEmpty() {
+    addEmptyView();
+    idAddEmptyViewBtn.focus();
+    setViewCounts();
 }
 
 
@@ -182,8 +230,10 @@ function handlePlayVideo() {
         idVideoPlayBtn.innerHTML = "Pause";
 
         views.forEach(({ video }) => {
-            video.currentTime = master.currentTime;
-            video.play();
+            if (video) {
+                video.currentTime = master.currentTime;
+                video.play();
+            }
         });
     }
     
@@ -191,7 +241,7 @@ function handlePlayVideo() {
         idVideoPlayBtn.innerHTML = "Resume";
 
         views.forEach(({ video }) => {
-            video.pause();
+            if (video) video.pause();
         });
     }
 }
@@ -207,8 +257,10 @@ function handleRestartVideo() {
     master.currentTime = 0;
     
     views.forEach(({ video }) => {
-        video.currentTime = 0;
-        video.pause();
+        if (video) {
+            video.currentTime = 0;
+            video.pause();
+        } 
     });
 
     videoCurrentTime = 0;
@@ -222,7 +274,7 @@ function handleMuteVideo() {
     idVideoMuteBtn.innerHTML = videoMuted ? "Unmute" : "Mute";
     
     views.forEach(({ video }) => {
-        video.muted = videoMuted;
+        if (video) video.muted = videoMuted;
     });
 }
 
@@ -233,7 +285,7 @@ function handleLoopVideo() {
     idVideoLoopBtn.innerHTML = videoLoops ? "Stop Looping" : "Loop";
 
     views.forEach(({ video }) => {
-        video.loop = videoLoops;
+        if (video) video.loop = videoLoops;
     });
 }
 
@@ -278,8 +330,17 @@ function timeSecToMinSec(timeInSeconds) {
 }
 
 
+function setViewCounts() {
+    idTotalViewCount.innerHTML = totalCurrentVisibleViews + totalCurrentEmptyViews;
+    idVisibleViewCount.innerHTML = totalCurrentVisibleViews;
+    idEmptyViewCount.innerHTML = totalCurrentEmptyViews;
+}
+
+
 function addAllEventListeners() {
     idAddLabelBtn.addEventListener("click", handleAddLabel);
+    idAddEmptyViewBtn.addEventListener("click", handleAddEmpty);
+
     idVideoPlayBtn.addEventListener("click", handlePlayVideo);
     idVideoRestartBtn.addEventListener("click", handleRestartVideo);
     idVideoMuteBtn.addEventListener("click", handleMuteVideo);
