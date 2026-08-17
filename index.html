@@ -93,9 +93,23 @@
                     <option value="TRITANOPIA">Tritanopia</option>
                 </select>
                 <label for="idShaderSeverity">Severity (0 to 1): 0.5</label>
-                <input type="range" name="nameShaderSeverity" id="idShaderSeverity" min="0.0" max="1.0" step="0.01">
+                
+                <input
+                    type="range"
+                    name="nameShaderSeverity"
+                    id="idShaderSeverity"
+                    min="0.0"
+                    max="1.0"
+                    step="0.01"
+                >
+
+                <!-- Source elements -->
                 <img class="viewImage" hidden>
                 <video class="viewVideo" hidden></video>
+
+                <!-- Actual rendered output -->
+                 <canvas id="idViewCanvas"></canvas>
+
                 <button class="deleteBtn" type="button">Delete</button>
             </div>
         </template>
@@ -115,5 +129,6 @@
     </footer>
 
     <script src="script.js"></script>
+    <script src="colour_lab.js"></script>
 </body>
 </html>

@@ -2,8 +2,6 @@
 // Clones the view template once per label entry,
 // then pushes input file into every cloned view.
 
-// Shader matrices
-
 const idControls = document.getElementById("idControls");
 const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
