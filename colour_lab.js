@@ -51,19 +51,19 @@ const TRITAN_MATRIX = {
 }
 
 const ColourShader = {
-    NONE: 0,
+    NONE: "NONE",
     
-    ACHROMATOPSIA: 1,
-    MONOCHROMACY: 2,
+    ACHROMATOPSIA: "ACHROMATOPSIA",
+    MONOCHROMACY: "MONOCHROMACY",
     
-    TRITANOPIA: 3,
-    TRITANOMALY: 4,
+    TRITANOPIA: "TRITANOPIA",
+    TRITANOMALY: "TRITANOMALY",
     
-    PROTANOPIA: 5,
-    PROTANOMALY: 6,
+    PROTANOPIA: "PROTANOPIA",
+    PROTANOMALY: "PROTANOMALY",
     
-    DEUTERANOPIA: 7,
-    DEUTERANOMALY: 8,
+    DEUTERANOPIA: "DEUTERANOPIA",
+    DEUTERANOMALY: "DEUTERANOMALY",
 };
 
 
@@ -105,7 +105,7 @@ function getSeverityMatrix(severityMatrix, severity) {
     
     // Invalid value
     else {
-        print("Invalid getSeverityMatrix lerp value: [" + try_parse_float + "]");
+        console.warn("Invalid getSeverityMatrix lerp value: [" + try_parse_float + "]");
         return null;
     }
 }
@@ -158,40 +158,34 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
             break;
         
         case ColourShader.ACHROMATOPSIA:
-            severity = "1.0";
-        
-        case ColourShader.MONOCHROMACY:
             shaderCode += buildLuminanceGLSL(severity);
             break;
         
         case ColourShader.PROTANOPIA:
-            severity = "1.0";
-        case ColourShader.PROTANOMALY:
             shaderCode += buildMatrixMultiplyGLSL(
                 getSeverityMatrix(PROTAN_MATRIX, severity)
             );
             break;
         
         case ColourShader.DEUTERANOPIA:
-            severity = "1.0";
-        
-        case ColourShader.DEUTERANOMALY:
             shaderCode += buildMatrixMultiplyGLSL(
                 getSeverityMatrix(DEUTERAN_MATRIX, severity)
             );
             break;
         
         case ColourShader.TRITANOPIA:
-            severity = "1.0";
-        
-        case ColourShader.TRITANOMALY:
             shaderCode += buildMatrixMultiplyGLSL(
                 getSeverityMatrix(TRITAN_MATRIX, severity)
             );
             break;
         
         default:
-            return null;
+            console.warn("Unknown shader filter: ", selectedFilter);
+            shaderCode += `
+                vec4 colour = texture2D(tex0, vTexCoord);
+                gl_FragColor = colour;
+            `;
+            break;
     }
     
     shaderCode = shaderCode + `}`;
@@ -200,15 +194,44 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
 
 
 function applyImageShader(view) {
-
+    // generate shader
+    const fragmentSrc = generateGLSLShader( view.shaderType, view.severity );
+    view.sandbox.load(fragmentSrc);
 }
 
 
 function applyVideoFrameShader(view) {
+    // upload current video frarme
+    const gl = view.gl;
+    gl.bindTexture(gl.TEXTURE_2D, view.texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, view.video);
 
-}
+    // generate shader
+    const fragmentSrc = generateGLSLShader( view.shaderType, view.severity );
+    const program = createProgram(gl, VERTEX_SHADER_SRC, fragmentSrc);
 
+    gl.useProgram(program);
 
-function render(frame) {
-    requestAnimationFrame;
+    // bind quad geometry
+    if (!view.quadBuffer) view.quadBuffer = createQuadBuffers(gl);
+    gl.bindBuffer(gl.ARRAY_BUFFER, view.quadBuffer);
+
+    const aPosition = gl.getAttribLocation(program, "aPosition");
+    const aTexCoord = gl.getAttribLocation(program, "aTexCoord");
+
+    gl.enableVertexAttribArray(aPosition);
+    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
+
+    gl.enableVertexAttribArray(aTexCoord);
+    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
+
+    // bind sampler
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, view.texture);
+    gl.uniform1i(gl.getUniformLocation(program, "tex0"), 0);
+
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+    view.program = program;
 }
