@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 12hr so far -->
+<!-- 13.5hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -43,6 +43,8 @@
                         Empty Views: <span id="idEmptyViewCount">0</span><br>
                         Total Views: <span id="idTotalViewCount">0</span>
                     </p>
+
+                    <button id="idDeleteAllViewsBtn" type="button" disabled>Delete all Views</button>
     
                     <div>
                         <label for="idColumnAmount">Columns (1 or more)</label>
@@ -83,31 +85,34 @@
 
         <!-- Source elements -->
          <div id="idMasterSourceContainer" hidden> <!-- Size gets determined by size of the img / video inside? -->
-            <img class="viewImage">
-            <video class="viewVideo"></video>
+            <img id="idMasterImage" class="viewImage">
+            <video id="idMasterVideo" class="viewVideo"></video>
         </div>
-             
+        
         <!-- One cloned per view, kept out of render tree until cloned -->
         <template id="idViewTemplate">
             <div class="view">
                 <p class="viewLabel"></p>
-                <label for="idShaderType">Shader Type</label>
-                <select class="shaderType">
-                    <option value="NONE">None</option>
-                    <option value="ACHROMATOPSIA">Achromatopsia</option>
-                    <option value="PROTANOPIA">Protanopia</option>
-                    <option value="DEUTERANOPIA">Deuteranopia</option>
-                    <option value="TRITANOPIA">Tritanopia</option>
-                </select>
-                <label for="idShaderSeverity">Severity (0 to 1): <span class="severityLabel">0.5</span></label>
-                
-                <input
-                    type="range"
-                    class="shaderSeverity"
-                    min="0.0"
-                    max="1.0"
-                    step="0.01"
-                >
+                <label for="idShaderType">
+                    Shader Type
+                    <select class="shaderType">
+                        <option value="NONE">None</option>
+                        <option value="ACHROMATOPSIA">Achromatopsia</option>
+                        <option value="PROTANOPIA">Protanopia</option>
+                        <option value="DEUTERANOPIA">Deuteranopia</option>
+                        <option value="TRITANOPIA">Tritanopia</option>
+                    </select>
+                </label>
+                <label>
+                    Severity (0 to 1): <span class="severityLabel">0.5</span>
+                    <input
+                        type="range"
+                        class="shaderSeverity"
+                        min="0.0"
+                        max="1.0"
+                        step="0.01"
+                    >
+                </label>
 
                 <!-- Actual rendered output -->
                 <div class="canvasContainer" hidden>

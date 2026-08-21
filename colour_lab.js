@@ -114,7 +114,8 @@ function getSeverityMatrix(severityMatrix, severity) {
 // For Colour Vision Deficiency of the Protan-, Deuteran-, Tritan- types
 function buildMatrixMultiplyGLSL(matrix) {
     return `
-        vec4 colour = texture2D(tex0, vTexCoord);
+        vec2 st = gl_FragCoord.xy / u_resolution;
+        vec4 colour = texture2D(tex0, st);
         vec3 row0 = vec3(${matrix[0]}, ${matrix[1]}, ${matrix[2]});
         vec3 row1 = vec3(${matrix[3]}, ${matrix[4]}, ${matrix[5]});
         vec3 row2 = vec3(${matrix[6]}, ${matrix[7]}, ${matrix[8]});
@@ -131,7 +132,8 @@ function buildMatrixMultiplyGLSL(matrix) {
 function buildLuminanceGLSL(severity) {
     const severity_float = parseFloat(severity).toFixed(6);
     return `
-        vec4 colour = texture2D(tex0, vTexCoord);
+        vec2 st = gl_FragCoord.xy / u_resolution;
+        vec4 colour = texture2D(tex0, st);
         vec3 rgb_weights = vec3(0.2126, 0.7152, 0.0722);
         float grey = dot(colour.rgb, rgb_weights);
         vec3 result = mix(colour.rgb, vec3(grey), ${severity_float});
@@ -142,9 +144,12 @@ function buildLuminanceGLSL(severity) {
 
 function generateGLSLShader(selectedFilter=null, severity="1.0") {
     let shaderCode = `
+        #ifdef GL_ES
         precision highp float;
-        varying vec2 vTexCoord;
+        #endif
+
         uniform sampler2D tex0;
+        uniform vec2 u_resolution;
 
         void main() {
     `;
@@ -152,8 +157,9 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
     switch(selectedFilter) {
         case ColourShader.NONE:
             shaderCode += `
-                vec4 colour = texture2D(tex0, vTexCoord);
-                gl_FragColor = vec4(colour.r, colour.g, colour.b, colour.a);
+                vec2 st = gl_FragCoord.xy / u_resolution;
+                vec4 colour = texture2D(tex0, st);
+                gl_FragColor = colour;
             `;
             break;
         
@@ -182,8 +188,8 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
         default:
             console.warn("Unknown shader filter: ", selectedFilter);
             shaderCode += `
-                vec4 colour = texture2D(tex0, vTexCoord);
-                gl_FragColor = colour;
+                vec2 st = gl_FragCoord.xy / u_resolution;
+                gl_FragColor = texture2D(u_texture, st);
             `;
             break;
     }
@@ -193,45 +199,20 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
 }
 
 
-function applyImageShader(view) {
-    // generate shader
-    const fragmentSrc = generateGLSLShader( view.shaderType, view.severity );
+function applyViewShader(view) {
+    if (!view || !view.sandbox) return;
+
+    const fragmentSrc = generateGLSLShader(view.shaderType, view.severity);
+
     view.sandbox.load(fragmentSrc);
-}
 
+    if (imageLoaded()) {
+        console.log("is image");
+        view.sandbox.setUniform("u_texture", masterImageInstance.src);
+    }
 
-function applyVideoFrameShader(view) {
-    // upload current video frarme
-    const gl = view.gl;
-    gl.bindTexture(gl.TEXTURE_2D, view.texture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, view.video);
-
-    // generate shader
-    const fragmentSrc = generateGLSLShader( view.shaderType, view.severity );
-    const program = createProgram(gl, VERTEX_SHADER_SRC, fragmentSrc);
-
-    gl.useProgram(program);
-
-    // bind quad geometry
-    if (!view.quadBuffer) view.quadBuffer = createQuadBuffers(gl);
-    gl.bindBuffer(gl.ARRAY_BUFFER, view.quadBuffer);
-
-    const aPosition = gl.getAttribLocation(program, "aPosition");
-    const aTexCoord = gl.getAttribLocation(program, "aTexCoord");
-
-    gl.enableVertexAttribArray(aPosition);
-    gl.vertexAttribPointer(aPosition, 2, gl.FLOAT, false, 16, 0);
-
-    gl.enableVertexAttribArray(aTexCoord);
-    gl.vertexAttribPointer(aTexCoord, 2, gl.FLOAT, false, 16, 8);
-
-    // bind sampler
-    gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, view.texture);
-    gl.uniform1i(gl.getUniformLocation(program, "tex0"), 0);
-
-    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-    view.program = program;
+    else if (videoLoaded()) {
+        console.log("is video");
+        view.sandbox.loadTexture("u_video", masterVideoInstance);
+    }
 }

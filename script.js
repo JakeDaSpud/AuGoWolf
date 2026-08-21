@@ -6,13 +6,10 @@ const idControls = document.getElementById("idControls");
 const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
 
-// Master Sources
-const idMasterImageSource = document.getElementById("idMasterImageSource");
-const idMasterVideoSource = document.getElementById("idMasterVideoSource");
-
 const idLabelText = document.getElementById("idLabelText");
 const idAddLabelBtn = document.getElementById("idAddLabelBtn");
 const idAddEmptyViewBtn = document.getElementById("idAddEmptyViewBtn");
+const idDeleteAllViewsBtn = document.getElementById("idDeleteAllViewsBtn");
 
 const idTotalViewCount = document.getElementById("idTotalViewCount");
 const idVisibleViewCount = document.getElementById("idVisibleViewCount");
@@ -46,9 +43,13 @@ const idExitFullscreen = document.getElementById("idExitFullscreen");
 
 const views = []; // { root, label, image, video }
 let currentFile = null;
+let sourceUrl = null;
+
+// Master Sources
+const masterImageInstance = document.getElementById("idMasterImage");
+const masterVideoInstance = document.getElementById("idMasterVideo");
 
 const VIDEO_MAX_DESYNC = 0.1; // seconds
-let videoMasterInstance = null;
 let videoCurrentTime = 0; // seconds
 let videoDuration = 0; // seconds
 let videoPlaying = false;
@@ -66,8 +67,6 @@ function addView(label) {
     const root = clone.querySelector(".view");
     const new_label = clone.querySelector(".viewLabel");
     
-    //const image = clone.querySelector(".viewImage");
-    //const video = clone.querySelector(".viewVideo");
     const canvas = clone.querySelector(".glslCanvas");
     const sandbox = new GlslCanvas(canvas);
     
@@ -79,8 +78,6 @@ function addView(label) {
     root.id = "idView-" + viewUidTracker;
     new_label.textContent = label;
     
-    //image.id = "idViewImage-" + viewUidTracker;
-    //video.id = "idViewVideo-" + viewUidTracker;
     canvas.id = "idViewCanvas-" + viewUidTracker;
     
     shader_type.id = "idShaderType-" + viewUidTracker;
@@ -89,7 +86,7 @@ function addView(label) {
     });
 
     shader_severity.id = "idShaderSeverity-" + viewUidTracker;
-    shader_severity.addEventListener("change", (e) => {
+    shader_severity.addEventListener("input", (e) => {
         setShaderSeverity(root.id, e.target.value);
         
         if (shader_severity_label) {
@@ -105,13 +102,10 @@ function addView(label) {
     viewUidTracker++;
     totalCurrentVisibleViews++;
 
-
     idViewsContainer.appendChild(clone);
     const view = {
         root,
         label,
-        //image,
-        //video,
         canvas,
         sandbox, // GlslCanvas Object
 
@@ -120,8 +114,6 @@ function addView(label) {
     };
 
     views.push(view);
-
-    createMasterVideoInstance();
 
     // if a file's already loaded, show it in this new view
     if (currentFile) {
@@ -166,22 +158,12 @@ function deleteView(viewId) {
     
     const idx = views.findIndex(v => v.root.id === viewId);
     if (idx !== -1) {
-        const wasMaster = views[idx].video && views[idx].video === videoMasterInstance;
-        
         if (views[idx].sandbox) {
             views[idx].sandbox.destroy();
         }
 
-        views.splice(idx, 1);    
-
-        if (wasMaster) {
-            videoMasterInstance = null;
-            createMasterVideoInstance();
-        }
-
-        if (videoMasterInstance == null) {
-            idVideoControls.hidden = true;
-        }
+        views.splice(idx, 1);
+        if (totalCurrentVisibleViews === 0) idVideoControls.hidden = true;
     }
 
     setViewCounts();
@@ -196,100 +178,62 @@ function updateGridShape() {
 }
 
 
-function createMasterVideoInstance() {
-    if (!videoMasterInstance) {
-        const viewWithVideo = views.find((v) => v.video);
-        if (!viewWithVideo) return null;
-
-        videoMasterInstance = viewWithVideo.video;
-        videoMasterInstance.muted = videoMuted;
-
-        videoMasterInstance.addEventListener("timeupdate", () => {
-            videoCurrentTime = videoMasterInstance.currentTime;
-
-            views.forEach(({ video }) => {
-                if (!video) return;
-                if (video === videoMasterInstance) return;
-
-                const difference = Math.abs(video.currentTime - videoCurrentTime);
-
-                if (difference > VIDEO_MAX_DESYNC) {
-                    video.currentTime = videoCurrentTime;
-                }
-            });
-
-            setCurrentTimestamp();
-        });
-    }
-
-    return videoMasterInstance;
+function updateFile(file) {
+    console.log("new file: ", file);
+    currentFile = file;
+    sourceUrl = URL.createObjectURL(currentFile);
 }
 
 
-function showFileInView(view, file) {
-    const { image, video, canvas, sandbox } = view;
+function showFileInView(view, file=currentFile) {
+    const { canvas, sandbox } = view;
     if (!sandbox) return;
     
-    const url = URL.createObjectURL(file);
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
 
     canvas.hidden = false;
+    if (canvas.parentNode) canvas.parentNode.hidden = false;
     
     if (isImage) {
-        if (!image || !video) return;
-        video.pause();
-        video.removeAttribute("src");
-        video.hidden = true;
-        idVideoControls.hidden = true;
-
-        image.src = url;
-        //image.hidden = false;
-
-        image.onload = () => {
-            // i DON'T want the canvas to be the og size, i want it to resize to whatever the parent container makes it in the flexbox
-            //canvas.width = image.naturalWidth;
-            //canvas.height = image.naturalHeight;
-            
-            sandbox.loadTexture("u_texture", url);
+        if (masterImageInstance.src !== sourceUrl) {
+            masterImageInstance.src = sourceUrl;
+            // reset video
+            masterVideoInstance.removeAttribute('src');
+        }
+        
+        masterImageInstance.onload = () => {
+            idVideoControls.hidden = true;
+            applyViewShader(view);
         };
+
+        if (masterImageInstance.complete && masterImageInstance.src) {
+            idVideoControls.hidden = true;
+            applyViewShader(view);
+        }
     }
 
     else if (isVideo) {
-        if (!image || !video) return;
-        createMasterVideoInstance();
+        if (masterVideoInstance.src !== sourceUrl) {
+            masterVideoInstance.src = sourceUrl;
+            // reset image
+            masterImageInstance.removeAttribute('src');
 
-        image.removeAttribute("src");
-        image.hidden = true;
-        idVideoControls.hidden = false;
-
-        video.src = url;
-        //video.hidden = false;
-
-        if (video === videoMasterInstance) {
-            video.muted = videoMuted; // Only the Master Instance can be unmuted
-        } else {
-            video.muted = true;
+            masterVideoInstance.onloadedmetadata = () => {
+                idVideoControls.hidden = false;
+                applyViewShader(view);
+    
+                if (videoPlaying) {
+                    masterVideoInstance.play();
+                } else {
+                    masterVideoInstance.pause();
+                }
+            };
         }
-
-        if (
-            videoMasterInstance &&
-            video !== videoMasterInstance &&
-            Number.isFinite(videoMasterInstance.currentTime)
-        ) {
-            video.currentTime = videoMasterInstance.currentTime;
-        }
-
-        video.onloadedmetadata = () => {
-            // i DON'T want the canvas to be the og size, i want it to resize to whatever the parent container makes it in the flexbox
-            //canvas.width = video.videoWidth;
-            //canvas.height = video.videoHeight;
-            
-            sandbox.loadTexture("u_texture", video);
-        };
-
-        if (videoPlaying) {
-            video.play();
+        // video already loaded, don't reset view's currentTime or .src
+        else {
+            idVideoControls.hidden = false;
+            applyViewShader(view);
         }
     }
 }
@@ -315,46 +259,27 @@ function handleAddEmpty() {
 function handlePlayVideo() {
     videoPlaying = !videoPlaying;
 
-    const master = createMasterVideoInstance();
-    if (!master) return;
-
     if (videoPlaying) {
+        masterVideoInstance.play();
         idVideoPlayBtn.innerHTML = "Pause";
-
-        views.forEach(({ video }) => {
-            if (video) {
-                video.play();
-            }
-        });
     }
     
     else {
+        masterVideoInstance.pause();
         idVideoPlayBtn.innerHTML = "Resume";
-
-        views.forEach(({ video }) => {
-            if (video) video.pause();
-        });
     }
 }
 
 
 function handleRestartVideo() {
-    const master = createMasterVideoInstance();
-    if (!master) return;
-
-    videoPlaying = false;
-    idVideoPlayBtn.innerHTML = "Play";
-
-    master.currentTime = 0;
-    
-    views.forEach(({ video }) => {
-        if (video) {
-            video.currentTime = 0;
-            video.pause();
-        } 
-    });
-
+    masterVideoInstance.currentTime = 0;
     videoCurrentTime = 0;
+    
+    if (!videoPlaying) {
+        masterVideoInstance.pause();
+        idVideoPlayBtn.innerHTML = "Play";
+    }
+    
     setCurrentTimestamp();
 }
 
@@ -364,7 +289,7 @@ function handleMuteVideo() {
 
     idVideoMuteBtn.innerHTML = videoMuted ? "Unmute" : "Mute";
     
-    if (videoMasterInstance) videoMasterInstance.muted = videoMuted;
+    if (videoLoaded()) masterVideoInstance.muted = videoMuted;
 }
 
 
@@ -373,41 +298,53 @@ function handleLoopVideo() {
 
     idVideoLoopBtn.innerHTML = videoLoops ? "Stop Looping" : "Loop";
 
-    if (videoMasterInstance) {
-        videoMasterInstance.loop = videoLoops;
+    if (videoLoaded()) {
+        masterVideoInstance.loop = videoLoops;
+    }
+}
+
+
+function handleDeleteAllViews() {
+    while (views.length > 0) {
+        deleteView(views[0].root.id);
     }
 }
 
 
 function skip(timeInSeconds) {
+    console.log("videocurrenttime before clamp: ", videoCurrentTime);
     videoCurrentTime = clamp(videoCurrentTime + timeInSeconds, 0, videoDuration);
-    if (videoMasterInstance) videoMasterInstance.currentTime = videoCurrentTime;
+    console.log("videocurrenttime after clamp: ", videoCurrentTime);
+    if (videoLoaded()) {
+        console.log("setting currentTime to", videoCurrentTime);
+        masterVideoInstance.currentTime = videoCurrentTime;
+    };
 }
 
 
-function setVideoDuration(file) {
-    if (!videoMasterInstance) return;
+function setVideoDuration() {
+    if (!videoLoaded()) return;
 
-    const videoUrl = URL.createObjectURL(file);
-    const tempVideo = document.createElement('video');
-
-    tempVideo.addEventListener('loadedmetadata', () => {
-        videoDuration = tempVideo.duration;
-        URL.revokeObjectURL(videoUrl);
-
-        idVideoLength.innerHTML = timeSecToMinSec(videoDuration);
-    });
-
-    tempVideo.src = videoUrl;
+    videoDuration = masterVideoInstance.duration;
+    idVideoLength.innerHTML = timeSecToMinSec(videoDuration);
 }
 
 
 function setCurrentTimestamp() {
-    if (!videoMasterInstance) return;
+    if (!videoLoaded()) return;
 
-    videoCurrentTime = videoMasterInstance.currentTime;
-
+    videoCurrentTime = masterVideoInstance.currentTime;
     idVideoTimestamp.innerHTML = timeSecToMinSec(videoCurrentTime);
+}
+
+
+function videoLoaded() {
+    return masterVideoInstance.hasAttribute('src');
+}
+
+
+function imageLoaded() {
+    return masterImageInstance.hasAttribute('src');
 }
 
 
@@ -417,9 +354,7 @@ function setShaderType(viewId, shaderType) {
 
     const view = views[idx];
     view.shaderType = shaderType;
-
-    if (view.image) applyImageShader(view);
-    else if (view.video) applyVideoFrameShader(view);
+    applyViewShader(view);
 }
 
 
@@ -428,52 +363,8 @@ function setShaderSeverity(viewId, shaderSeverity) {
     if (idx === -1) return;
 
     const view = views[idx];
-    view.shaderSeverity = shaderSeverity;
-
-    if (view.image) applyImageShader(view);
-    else if (view.video) applyVideoFrameShader(view);
-}
-
-
-function loadAllShaders() {
-    if (!videoMasterInstance) return;
-
-    views.forEach((view) => {
-        if (view.isImage) {
-            applyImageShader(view);
-        } else if (view.isVideo) {
-            applyVideoFrameShader(view);
-        }
-    });
-}
-
-
-function render() {
-    views.forEach(({ image, video }) => {
-        if (image) {
-
-        }
-
-        else if (video) {
-
-        }
-    })
-}
-
-
-function syncVideos() {
-    if (!videoMasterInstance) return;
-    
-    views.forEach(({ video }) => {
-        if (video) {
-            video.currentTime = videoMasterInstance.currentTime;
-            if (videoPlaying) {
-                video.play();
-            } else {
-                video.pause();
-            }
-        } 
-    });
+    view.shaderSeverity = parseFloat(shaderSeverity);
+    applyViewShader(view);
 }
 
 
@@ -500,6 +391,12 @@ function setViewCounts() {
     idTotalViewCount.innerHTML = totalCurrentVisibleViews + totalCurrentEmptyViews;
     idVisibleViewCount.innerHTML = totalCurrentVisibleViews;
     idEmptyViewCount.innerHTML = totalCurrentEmptyViews;
+
+    if (totalCurrentVisibleViews + totalCurrentEmptyViews <= 0) {
+        idDeleteAllViewsBtn.disabled = true;
+    } else {
+        idDeleteAllViewsBtn.disabled = false;
+    }
 }
 
 
@@ -532,6 +429,8 @@ function addAllEventListeners() {
     idVideoMuteBtn.addEventListener("click", handleMuteVideo);
     idVideoLoopBtn.addEventListener("click", handleLoopVideo);
 
+    idDeleteAllViewsBtn.addEventListener("click", handleDeleteAllViews);
+
     idColumnAmount.addEventListener("input", updateGridShape);
 
     idLayoutUrl.addEventListener("onclick", copyUrl);
@@ -543,15 +442,15 @@ function addAllEventListeners() {
         if (e.key === "Enter") handleAddLabel();
     });
 
+    masterVideoInstance.addEventListener("loadedmetadata", setVideoDuration);
+    masterVideoInstance.addEventListener("timeupdate", setCurrentTimestamp);
+
     idFileInput.addEventListener("change", () => {
         const file = idFileInput.files[0];
         if (!file) return;
 
-        currentFile = file;
-
-        console.log(file);
-        setVideoDuration(currentFile);
-        views.forEach((view) => showFileInView(view, file));
+        updateFile(file);
+        views.forEach((view) => showFileInView(view));
     });
 
     updateGridShape();
