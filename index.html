@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 13.5hr so far -->
+<!-- 17hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <header class="align-self-end">
+    <header class="align-self-end" id="idHeader">
         <img src="./assets/logo-square.png" style="height: 2.5em; width: auto; object-fit: cover; filter: brightness(0) saturate(100%) invert(93%) sepia(1%) saturate(3051%) hue-rotate(325deg) brightness(101%) contrast(108%);">
         AuGoWolf
     </header>
@@ -33,34 +33,44 @@
                 <div id="viewSettings">
                     <h2>View Layout</h2>
                     
-                    <input type="text" name="nameViewLabelText" id="idLabelText" placeholder="View Label">
-                    
-                    <button id="idAddLabelBtn" type="button">Add View</button>
-                    <button id="idAddEmptyViewBtn" type="button">Add Empty</button>
-    
-                    <p>
-                        Visible Views: <span id="idVisibleViewCount">0</span><br>
-                        Empty Views: <span id="idEmptyViewCount">0</span><br>
-                        Total Views: <span id="idTotalViewCount">0</span>
-                    </p>
+                    <input type="text" name="nameLayoutNameText" id="idLayoutNameText" placeholder="Unnamed Layout">
 
-                    <button id="idDeleteAllViewsBtn" type="button" disabled>Delete all Views</button>
-    
                     <div>
-                        <label for="idColumnAmount">Columns (1 or more)</label>
-                        <input type="number" name="nameColumnLabel" id="idColumnAmount" min="1" value="3">
+                        <input type="text" name="nameViewLabelText" id="idLabelText" placeholder="View Label">
+                    
+                        <button id="idAddLabelBtn" type="button">Add View</button>
+                        <button id="idAddEmptyViewBtn" type="button">Add Empty</button>
+        
+                        <p>
+                            Visible Views: <span id="idVisibleViewCount">0</span><br>
+                            Empty Views: <span id="idEmptyViewCount">0</span><br>
+                            Total Views: <span id="idTotalViewCount">0</span>
+                        </p>
+
+                        <button id="idDeleteAllViewsBtn" type="button" disabled>Delete all Views</button>
+        
+                        <div>
+                            <label for="idColumnAmount">Columns (1 or more)</label>
+                            <input type="number" name="nameColumnLabel" id="idColumnAmount" min="1" value="3">
+                        </div>
+        
+                        <div>
+                            <label for="idLayoutUrl">Your layout URL: </label>
+                            <input type="text" name="nameLayoutUrl" id="idLayoutUrl">
+                        </div>
                     </div>
-    
-                    <div>
-                        <label for="idLayoutUrl">Your layout URL: </label>
-                        <input type="text" name="nameLayoutUrl" id="idLayoutUrl">
-                    </div>
+                    
     
                     <button id="idEnterFullscreen" type="button">Enter Fullscreen</button>
                 </div>
             </div>
 
             <button id="idExitFullscreen" type="button" hidden>Exit Fullscreen</button>
+            
+            <label>
+                Simple Mode: 
+                <input type="checkbox" name="nameSimpleMode" id="idSimpleModeCheckbox">
+            </label>
 
             <div id="idVideoControls" hidden class="centre">
                 <div>
@@ -104,7 +114,7 @@
                     </select>
                 </label>
                 <label>
-                    Severity (0 to 1): <span class="severityLabel">0.5</span>
+                    Severity: <span class="severityLabel">0.5</span>
                     <input
                         type="range"
                         class="shaderSeverity"
@@ -133,7 +143,7 @@
         <div id="idViewsContainer"></div>
     </main>
 
-    <footer>
+    <footer id="idFooter">
         <a href="https://jakedaspud.github.io/JakeDaSpud/" target="_blank">jake o'reilly</a> | 2026
     </footer>
 

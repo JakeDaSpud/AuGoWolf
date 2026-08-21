@@ -2,10 +2,14 @@
 // Clones the view template once per label entry,
 // then pushes input file into every cloned view.
 
+const idHeader = document.getElementById("idHeader");
+const idFooter = document.getElementById("idFooter");
+
 const idControls = document.getElementById("idControls");
 const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
 
+const idLayoutNameText = document.getElementById("idLayoutNameText");
 const idLabelText = document.getElementById("idLabelText");
 const idAddLabelBtn = document.getElementById("idAddLabelBtn");
 const idAddEmptyViewBtn = document.getElementById("idAddEmptyViewBtn");
@@ -40,6 +44,8 @@ const idLayoutUrl = document.getElementById("idLayoutUrl");
 
 const idEnterFullscreen = document.getElementById("idEnterFullscreen");
 const idExitFullscreen = document.getElementById("idExitFullscreen");
+
+const idSimpleModeCheckbox = document.getElementById("idSimpleModeCheckbox");
 
 const views = []; // { root, label, image, video }
 let currentFile = null;
@@ -87,10 +93,13 @@ function addView(label) {
 
     shader_severity.id = "idShaderSeverity-" + viewUidTracker;
     shader_severity.addEventListener("input", (e) => {
-        setShaderSeverity(root.id, e.target.value);
+        const val_as_string = e.target.value;
+        console.log("new value for View[", root.id, "]: ", val_as_string, " of type ", typeof(val_as_string));
+
+        setShaderSeverity(root.id, val_as_string);
         
         if (shader_severity_label) {
-            shader_severity_label.textContent = e.target.value;
+            shader_severity_label.textContent = parseFloat(val_as_string).toFixed(2);
         }
     });
 
@@ -110,7 +119,7 @@ function addView(label) {
         sandbox, // GlslCanvas Object
 
         shaderType: ColourShader.NONE,
-        severity: 0.5,
+        shaderSeverity: 0.5,
     };
 
     views.push(view);
@@ -182,6 +191,7 @@ function updateFile(file) {
     console.log("new file: ", file);
     currentFile = file;
     sourceUrl = URL.createObjectURL(currentFile);
+    applyAllViewShaders();
 }
 
 
@@ -236,6 +246,13 @@ function showFileInView(view, file=currentFile) {
             applyViewShader(view);
         }
     }
+}
+
+
+function applyAllViewShaders() {
+    views.forEach(({ view }) => {
+        applyViewShader(view);
+    });
 }
 
 
@@ -364,14 +381,8 @@ function setShaderSeverity(viewId, shaderSeverity) {
 
     const view = views[idx];
     view.shaderSeverity = parseFloat(shaderSeverity);
+    console.log("setting severity to", view.shaderSeverity);
     applyViewShader(view);
-}
-
-
-function copyUrl() {
-    idLayoutUrl.select();
-    document.execCommand('copy');
-    alert('Copied to clipboard');
 }
 
 
@@ -404,6 +415,9 @@ function enterFullscreen() {
     idFullscreenControls.hidden = true;
     // turn off fullscreen for all visible views
     idExitFullscreen.hidden = false;
+
+    idHeader.hidden = true;
+    idFooter.hidden = true;
 }
 
 
@@ -411,6 +425,106 @@ function exitFullscreen() {
     idExitFullscreen.hidden = true;
     // turn off fullscreen for all visible views
     idFullscreenControls.hidden = false;
+
+    idHeader.hidden = false;
+    idFooter.hidden = false;
+}
+
+
+function copyUrl() {
+    idLayoutUrl.select();
+    document.execCommand('copy');
+    alert('Copied to clipboard');
+}
+
+
+function copyLayoutAsUrlCode() {
+    
+    let output_url_code = "";
+    
+    // layout name "string"
+    let trimmed_name = idLayoutNameText.textContent;
+    trimmed_name.replace(';', '');
+    output_url_code += trimmed_name + ';';
+    
+    // column count int
+    output_url_code += idColumnAmount.value + ';';
+    
+    // simpleMode bool / 0 1 int
+    let simpleModeBit = idSimpleModeCheckbox.checked ? '1' : '0';
+    output_url_code += idSimpleModeCheckbox.value + ';';
+    
+    // views["name string":Type char N A P D T:Severity float x.xx;]
+    views.forEach(({view}) => {
+        if (view.isImage || view.isVideo) {
+            output_url_code += getViewAsUrlCode(view);
+        }
+
+        else {
+            output_url_code += getEmptyViewAsUrlCode();
+        }
+    });
+}
+
+
+function getViewAsUrlCode(view) {
+    let view_as_string = "";
+
+    let trimmed_label = view.label;
+    trimmed_label.replace(':', '');
+    trimmed_label.replace(';', '');
+    view_as_string += trimmed_label + ':'
+
+    switch (view.shaderType) {
+        case ColourShader.NONE:
+            view_as_string += 'N';
+            break;
+        
+        case ColourShader.ACHROMATOPSIA:
+            view_as_string += 'A';
+            break;
+        
+        case ColourShader.PROTANOPIA:
+            view_as_string += 'P';
+            break;
+        
+        case ColourShader.DEUTERANOPIA:
+            view_as_string += 'D';
+            break;
+        
+        case ColourShader.TRITANOPIA:
+            view_as_string += 'T';
+            break;
+    
+        default:
+            break;
+    }
+    view_as_string += ':';
+
+    view_as_string += view.shaderSeverity + ';';
+
+    return view_as_string;
+}
+
+
+function getEmptyViewAsUrlCode() {
+    return 'empty;';
+}
+
+
+function buildLayoutFromUrlCode(urlCode) {
+    // layout name
+
+    // set column count
+
+    // set simple or full View mode
+    // whether it's just the View name and canvas, or full View settings with borders and backgrounds
+
+    // for every View
+    addView();
+
+    // for every EmptyView
+    addEmptyView();
 }
 
 

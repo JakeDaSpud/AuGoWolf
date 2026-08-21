@@ -79,6 +79,8 @@ function getSeverityMatrix(severityMatrix, severity) {
     // Check if value is valid float 0.0 to 1.0
     // if so, create and return lerp_matrix_out
     else if (0.0 < try_parse_float && 1.0 > try_parse_float) {
+        //console.log("Severity will lerp to ", severity);
+
         const lerp_matrix_out = [
             0, 0, 0,
             0, 0, 0,
@@ -142,7 +144,11 @@ function buildLuminanceGLSL(severity) {
 }
 
 
-function generateGLSLShader(selectedFilter=null, severity="1.0") {
+function generateGLSLShader(selectedFilter=null, severity=1.0) {
+    if (typeof(severity) == "string") {
+        severity = parseFloat(severity);
+    }
+
     let shaderCode = `
         #ifdef GL_ES
         precision highp float;
@@ -202,17 +208,17 @@ function generateGLSLShader(selectedFilter=null, severity="1.0") {
 function applyViewShader(view) {
     if (!view || !view.sandbox) return;
 
-    const fragmentSrc = generateGLSLShader(view.shaderType, view.severity);
+    const fragmentSrc = generateGLSLShader(view.shaderType, view.shaderSeverity);
 
     view.sandbox.load(fragmentSrc);
 
     if (imageLoaded()) {
-        console.log("is image");
+        //console.log("is image");
         view.sandbox.setUniform("u_texture", masterImageInstance.src);
     }
 
     else if (videoLoaded()) {
-        console.log("is video");
+        //console.log("is video");
         view.sandbox.loadTexture("u_video", masterVideoInstance);
     }
 }
