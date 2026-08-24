@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 17hr so far -->
+<!-- 20hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -104,7 +104,7 @@
         <template id="idViewTemplate">
             <div class="view">
                 <p class="viewLabel"></p>
-                <label for="idShaderType">
+                <label for="idShaderType"> <!-- HIDDEN IN SIMPLE MODE-->
                     Shader Type
                     <select class="shaderType">
                         <option value="NONE">None</option>
@@ -114,7 +114,7 @@
                         <option value="TRITANOPIA">Tritanopia</option>
                     </select>
                 </label>
-                <label>
+                <label> <!-- HIDDEN IN SIMPLE MODE-->
                     Severity: <span class="severityLabel">0.5</span>
                     <input
                         type="range"
@@ -130,7 +130,7 @@
                     <canvas class="glslCanvas"></canvas>
                 </div>
 
-                <button class="deleteBtn" type="button">Delete</button>
+                <button class="deleteBtn" type="button">Delete</button> <!-- HIDDEN IN SIMPLE MODE-->
             </div>
         </template>
 

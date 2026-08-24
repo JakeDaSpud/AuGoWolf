@@ -109,10 +109,21 @@ footer a:hover {
     min-height: 0;
 }
 
+.simple-view {
+    border-color: #FFFFFF00 !important;
+    background-color: #FFFFFF00;
+}
+
+.simple-view button,
+.simple-view label {
+    display: none;
+}
+
 .canvasContainer {
     width: 100%;
     display: block;
     aspect-ratio: 1;
+    margin-top: auto;
 }
 
 .glslCanvas {

@@ -48,9 +48,22 @@ const idExitFullscreen = document.getElementById("idExitFullscreen");
 
 const idSimpleModeCheckbox = document.getElementById("idSimpleModeCheckbox");
 
+const ColourShaderToSelectValue = new Map([
+    [ColourShader.NONE,             "NONE"          ],
+    [ColourShader.ACHROMATOPSIA,    "ACHROMATOPSIA" ],
+    [ColourShader.PROTANOPIA,       "PROTANOPIA"    ],
+    [ColourShader.DEUTERANOPIA,     "DEUTERANOPIA"  ],
+    [ColourShader.TRITANOPIA,       "TRITANOPIA"    ],
+]);
+
 const views = []; // { root, label, image, video }
 let currentFile = null;
 let sourceUrl = null;
+
+// url encoding
+const EMPTY_VIEW_CODE = '!e';
+let last_layout_url = null;
+let layoutIsSimple = false;
 
 // Master Sources
 const masterImageInstance = document.getElementById("idMasterImage");
@@ -68,7 +81,7 @@ let totalCurrentVisibleViews = 0;
 let totalCurrentEmptyViews = 0;
 
 
-function addView(label) {
+function addView(label, param_type=null, param_severity=null) {
     const clone = idViewTemplate.content.cloneNode(true);
     
     const root = clone.querySelector(".view");
@@ -86,17 +99,49 @@ function addView(label) {
     new_label.textContent = label;
     
     canvas.id = "idViewCanvas-" + viewUidTracker;
-    
     shader_type.id = "idShaderType-" + viewUidTracker;
+    shader_severity.id = "idShaderSeverity-" + viewUidTracker;
+    delete_btn.id = "idDeleteBtn-" + viewUidTracker;
+    
+    viewUidTracker++;
+    totalCurrentVisibleViews++;
+
+    idViewsContainer.appendChild(clone);
+    
+    const resolved_type = param_type != null ? urlCodeToShaderType(param_type) : ColourShader.NONE;
+    const resolved_severity = param_severity != null ? parseFloat(param_severity) : 0.5;
+
+    setShaderTypeSelect(shader_type, resolved_type);
+    shader_severity.value = resolved_severity;
+    if (shader_severity_label) shader_severity_label.textContent = resolved_severity.toFixed(2);
+    
+    const view = {
+        root,
+        label,
+        canvas,
+        sandbox, // GlslCanvas Object
+        visible: true,
+        shaderType: resolved_type,
+        shaderSeverity: resolved_severity,
+    };
+
+    views.push(view);
+
+    if (layoutIsSimple) {
+        setSimpleModeForView(view, true);
+    }
+    
+    if (param_type != null) setShaderType(root.id, resolved_type);
+    if (param_severity != null) setShaderSeverity(root.id, resolved_severity);
+    
     shader_type.addEventListener("change", (e) => {
         setShaderType(root.id, e.target.value);
     });
-
-    shader_severity.id = "idShaderSeverity-" + viewUidTracker;
+    
     shader_severity.addEventListener("input", (e) => {
         const val_as_string = e.target.value;
         console.log("new value for View[", root.id, "]: ", val_as_string, " of type ", typeof(val_as_string));
-
+        
         setShaderSeverity(root.id, val_as_string);
         
         if (shader_severity_label) {
@@ -104,27 +149,9 @@ function addView(label) {
         }
     });
 
-    delete_btn.id = "idDeleteBtn-" + viewUidTracker;
     delete_btn.addEventListener("click", () => {
         deleteView(root.id);
     });
-
-    viewUidTracker++;
-    totalCurrentVisibleViews++;
-
-    idViewsContainer.appendChild(clone);
-    const view = {
-        root,
-        label,
-        canvas,
-        sandbox, // GlslCanvas Object
-        visible: true,
-
-        shaderType: ColourShader.NONE,
-        shaderSeverity: 0.5,
-    };
-
-    views.push(view);
 
     // if a file's already loaded, show it in this new view
     if (currentFile) {
@@ -155,6 +182,10 @@ function addEmptyView() {
         visible: false,
     };
     views.push(view);
+
+    if (layoutIsSimple) {
+        setSimpleModeForView(view, true);
+    }
 }
 
 
@@ -181,6 +212,14 @@ function deleteView(viewId) {
     }
 
     setViewCounts();
+}
+
+
+function setShaderTypeSelect(selectElement, shaderType) {
+    const option = ColourShaderToSelectValue.get(shaderType);
+    if (option != null) {
+        selectElement.value = option;
+    }
 }
 
 
@@ -436,6 +475,48 @@ function exitFullscreen() {
 }
 
 
+function toggleSimpleMode(isSimple=null) {
+    if (isSimple == null) isSimple = !layoutIsSimple;
+    layoutIsSimple = isSimple;
+
+    setSimpleModeForAllViews(isSimple);
+}
+
+
+function setSimpleModeForView(view, isSimple) {
+    const root = view.root;
+    if (!root) return;
+    console.log("has root");
+
+    // true
+        // only name and canvas
+        // hides sliders and buttons and background and border
+    
+    // false
+        // name, canvas, properties, sliders, delete all visible
+
+    root.classList.toggle('simple-view', isSimple);
+}
+
+
+function setSimpleModeForAllViews(isSimple) {
+    views.forEach((view) => {
+        setSimpleModeForView(view, isSimple);
+    });
+}
+
+
+function checkUrlParameter() {
+    let params = new URLSearchParams(document.location.search);
+    let layout = params.get('layout');
+
+    if (layout != "") {
+        last_layout_url = layout;
+        buildLayoutFromUrlCode(last_layout_url);
+    }
+}
+
+
 function copyUrl() {
     idLayoutUrl.select();
     document.execCommand('copy');
@@ -444,11 +525,10 @@ function copyUrl() {
 
 
 function generateAndCopyLayoutUrl() {
-    
     let output_url_code = "";
     
     // layout name "string"
-    let trimmed_name = idLayoutNameText.textContent;
+    let trimmed_name = idLayoutNameText.value;
     trimmed_name = trimmed_name.replace(';', '');
     output_url_code += trimmed_name + ';';
     
@@ -474,9 +554,9 @@ function generateAndCopyLayoutUrl() {
 
     // current url up until 'AuGoWolf/'
     let trimmed_current_url = window.location.href;
-    trimmed_current_url = trimmed_current_url.split('AuGoWolf/')[0] + 'AuGoWolf/';
+    trimmed_current_url = trimmed_current_url.split('AuGoWolf/')[0] + 'AuGoWolf/index.html';
 
-    let final_url = trimmed_current_url + '?layout=' + output_url_code;
+    let final_url = trimmed_current_url + '?layout=' + encodeURIComponent(output_url_code);
 
     idLayoutUrl.value = final_url;
     copyUrl();
@@ -524,23 +604,57 @@ function getViewAsUrlCode(view) {
 
 
 function getEmptyViewAsUrlCode() {
-    return 'empty;';
+    return EMPTY_VIEW_CODE + ';';
+}
+
+
+function urlCodeToShaderType(code) {
+    switch (code) {
+        case 'N': return ColourShader.NONE;
+        case 'A': return ColourShader.ACHROMATOPSIA;
+        case 'P': return ColourShader.PROTANOPIA;
+        case 'D': return ColourShader.DEUTERANOPIA;
+        case 'T': return ColourShader.TRITANOPIA;
+        default: return ColourShader.NONE;
+    }
 }
 
 
 function buildLayoutFromUrlCode(urlCode) {
+    idLayoutUrl.value = last_layout_url;
+    console.log('last_layout_url is now [', last_layout_url, ']');
+
+    let values = urlCode.split(';');
+    console.log('values = [', values, ']');
+
     // layout name
+    idLayoutNameText.value = values[0];
+    console.log('Layout name is now[', values[0], ']');
 
     // set column count
+    idColumnAmount.value = parseInt(values[1]);
+    console.log('Column amount is now[', values[1], ']');
+    updateGridShape();
+    
+    for (i = 3; i < values.length - 1; i++) {
+        if (values[i] === EMPTY_VIEW_CODE) {
+            console.log('Adding EmptyView');
+            addEmptyView();
+            continue;
+        }
 
-    // set simple or full View mode
-    // whether it's just the View name and canvas, or full View settings with borders and backgrounds
+        let current_view = values[i].split(':'); // gives me [label, type, severity]
 
-    // for every View
-    addView();
+        console.log('Adding View[', current_view[0], current_view[1], current_view[2], ']');
+        addView(current_view[0], current_view[1], current_view[2]);
+    }
+    
+    layoutIsSimple = !!parseInt(values[2]);
+    console.log('Simple mode is now[', values[2], ']');
+    idSimpleModeCheckbox.checked = layoutIsSimple;
+    setSimpleModeForAllViews(layoutIsSimple);
 
-    // for every EmptyView
-    addEmptyView();
+    setViewCounts();
 }
 
 
@@ -568,7 +682,11 @@ function addAllEventListeners() {
 
     idEnterFullscreen.addEventListener("click", enterFullscreen);
     idExitFullscreen.addEventListener("click", exitFullscreen);
-    
+
+    idSimpleModeCheckbox.addEventListener("input", (e) => {
+        toggleSimpleMode(e.target.checked);
+    });
+
     idLabelText.addEventListener("keydown", (e) => {
         if (e.key === "Enter") handleAddLabel();
     });
@@ -589,3 +707,4 @@ function addAllEventListeners() {
 
 
 addAllEventListeners();
+checkUrlParameter();
