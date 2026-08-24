@@ -41,6 +41,7 @@ const idEmptyViewTemplate = document.getElementById("idEmptyViewTemplate");
 const idViewsContainer = document.getElementById("idViewsContainer");
 const idColumnAmount = document.getElementById("idColumnAmount");
 const idLayoutUrl = document.getElementById("idLayoutUrl");
+const idGenerateLayoutUrlBtn = document.getElementById("idGenerateLayoutUrlBtn");
 
 const idEnterFullscreen = document.getElementById("idEnterFullscreen");
 const idExitFullscreen = document.getElementById("idExitFullscreen");
@@ -117,6 +118,7 @@ function addView(label) {
         label,
         canvas,
         sandbox, // GlslCanvas Object
+        visible: true,
 
         shaderType: ColourShader.NONE,
         shaderSeverity: 0.5,
@@ -148,7 +150,10 @@ function addEmptyView() {
     totalCurrentEmptyViews++;
 
     idViewsContainer.appendChild(clone);
-    const view = { root };
+    const view = {
+        root,
+        visible: false,
+    };
     views.push(view);
 }
 
@@ -250,7 +255,7 @@ function showFileInView(view, file=currentFile) {
 
 
 function applyAllViewShaders() {
-    views.forEach(({ view }) => {
+    views.forEach((view) => {
         applyViewShader(view);
     });
 }
@@ -434,17 +439,17 @@ function exitFullscreen() {
 function copyUrl() {
     idLayoutUrl.select();
     document.execCommand('copy');
-    alert('Copied to clipboard');
+    alert('Copied Layout URL to clipboard.');
 }
 
 
-function copyLayoutAsUrlCode() {
+function generateAndCopyLayoutUrl() {
     
     let output_url_code = "";
     
     // layout name "string"
     let trimmed_name = idLayoutNameText.textContent;
-    trimmed_name.replace(';', '');
+    trimmed_name = trimmed_name.replace(';', '');
     output_url_code += trimmed_name + ';';
     
     // column count int
@@ -452,11 +457,11 @@ function copyLayoutAsUrlCode() {
     
     // simpleMode bool / 0 1 int
     let simpleModeBit = idSimpleModeCheckbox.checked ? '1' : '0';
-    output_url_code += idSimpleModeCheckbox.value + ';';
+    output_url_code += simpleModeBit + ';';
     
     // views["name string":Type char N A P D T:Severity float x.xx;]
-    views.forEach(({view}) => {
-        if (view.isImage || view.isVideo) {
+    views.forEach((view) => {
+        if (view.visible) {
             output_url_code += getViewAsUrlCode(view);
         }
 
@@ -464,6 +469,17 @@ function copyLayoutAsUrlCode() {
             output_url_code += getEmptyViewAsUrlCode();
         }
     });
+
+    console.log("final url: ", output_url_code);
+
+    // current url up until 'AuGoWolf/'
+    let trimmed_current_url = window.location.href;
+    trimmed_current_url = trimmed_current_url.split('AuGoWolf/')[0] + 'AuGoWolf/';
+
+    let final_url = trimmed_current_url + '?layout=' + output_url_code;
+
+    idLayoutUrl.value = final_url;
+    copyUrl();
 }
 
 
@@ -471,8 +487,8 @@ function getViewAsUrlCode(view) {
     let view_as_string = "";
 
     let trimmed_label = view.label;
-    trimmed_label.replace(':', '');
-    trimmed_label.replace(';', '');
+    trimmed_label = trimmed_label.replace(':', '');
+    trimmed_label = trimmed_label.replace(';', '');
     view_as_string += trimmed_label + ':'
 
     switch (view.shaderType) {
@@ -548,6 +564,7 @@ function addAllEventListeners() {
     idColumnAmount.addEventListener("input", updateGridShape);
 
     idLayoutUrl.addEventListener("onclick", copyUrl);
+    idGenerateLayoutUrlBtn.addEventListener("click", generateAndCopyLayoutUrl);
 
     idEnterFullscreen.addEventListener("click", enterFullscreen);
     idExitFullscreen.addEventListener("click", exitFullscreen);
