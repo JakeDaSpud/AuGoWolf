@@ -66,6 +66,79 @@ const ColourShader = {
     DEUTERANOMALY: "DEUTERANOMALY",
 };
 
+/*
+    Dictionary of "name-code" Matrix values
+    returns a 3x3 Matrix for the filter
+*/
+const CachedShaders = {
+    "n": [1, 0, -0, 0, 1, 0, -0, -0, 1],
+};
+
+
+function toFilterCode(severityShader, severity) {
+    if (severityShader == ColourShader.NONE) {
+        return "n";
+    } else {
+        return ColourShader[severityShader][0].toLowerCase() + parseFloat(severity).toFixed(2).replace('.', '');
+    }
+}
+
+
+function typeFromFilterCode(filterCode) {
+    switch (filterCode[0]) {
+        case 'n':
+            return ColourShader.NONE;
+        
+        case 'a':
+            return ColourShader.ACHROMATOPSIA;
+        
+        case 'p':
+            return ColourShader.PROTANOPIA;
+        
+        case 'd':
+            return ColourShader.DEUTERANOPIA;
+        
+        case 't':
+            return ColourShader.TRITANOPIA;    
+
+        default:
+            return ColourShader.NONE;
+    }
+}
+
+
+function severityFromFilterCode(filterCode) {
+    if (filterCode[0] === 'n') return 1.00;
+
+    return parseFloat(
+        filterCode.substring(1, 2) + '.'
+        + filterCode.substring(2)
+    );
+}
+
+
+function matrixToRGBAM(matrix) {
+    if (matrix.length !== 9) {
+        console.warn("Matrix is not correct shape, should be 9: matrix.length[", matrix.length, "]");
+        return;
+    };
+    /*
+    matrix should be
+    [
+        r1, r2, r3,
+        g1, g2, g3,
+        b1, b2, b3
+    ]
+    */
+    return [
+    //  R          G          B          A  Multiply/Offset
+        matrix[0], matrix[1], matrix[2], 0, 0,
+        matrix[3], matrix[4], matrix[5], 0, 0,
+        matrix[6], matrix[7], matrix[8], 0, 0,
+        0,         0,         0,         1, 0
+    ];
+}
+
 
 // Finds matching Severity Matrix, or if the value doesn't exist (and is between 0.0 and 1.0), returns an interpolated value Matrix.
 function getSeverityMatrix(severityMatrix, severity) {
