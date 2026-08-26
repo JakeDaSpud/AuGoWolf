@@ -623,6 +623,7 @@ function urlCodeToShaderType(code) {
 function buildLayoutFromUrlCode(urlCode) {
     idLayoutUrl.value = last_layout_url;
     console.log('last_layout_url is now [', last_layout_url, ']');
+    if (!urlCode) return;
 
     let values = urlCode.split(';');
     console.log('values = [', values, ']');
