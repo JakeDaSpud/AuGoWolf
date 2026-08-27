@@ -91,6 +91,8 @@ const CachedShaders = new Map([
     [NONE_FILTER_CODE, [1, 0, 0, 0, 1, 0, 0, 0, 1]],
 ]);
 
+const svgNS = 'https://www.w3.org/2000/svg';
+
 
 function toFilterCode(shaderType, severity) {
     if (shaderType == ColourShader.NONE) {
@@ -166,14 +168,39 @@ function getOrComputeCachedMatrix(filterCode) {
     } else {
         // Miss
         console.log(`Adding new entry for CachedShaders[${filterCode}]`);
-        CachedShaders.set(
-            filterCode,
-            getSeverityMatrix(
-                typeFromFilterCode(filterCode),
-                severityFromFilterCode(filterCode)
-            )
+        
+        const computed = getSeverityMatrix(
+            getMatrixFromType(
+                typeFromFilterCode(filterCode)
+            ),
+            severityFromFilterCode(filterCode)
         );
+
+        createFilterDefAndClass(filterCode, computed);
+
+        CachedShaders.set(filterCode, computed);
+        return computed;
     }
+}
+
+
+function createFilterDefAndClass(filterCode, matrix) {
+    const filter = document.createElementNS(svgNS, 'filter');
+    const feColorMatrix = document.createElementNS(svgNS, 'feColorMatrix');
+
+    filter.id = filterCode;
+    filter.setAttribute("color-interpolation-filters", "sRGB");
+
+    feColorMatrix.setAttribute("type", "matrix");
+    feColorMatrix.setAttribute("values", matrixToRGBAM(matrix));
+
+    filter.appendChild(feColorMatrix);
+    idCvdFilterDefs.appendChild(filter);
+
+    const style = document.createElement('style');
+    style.id = 'cvdfStyle-' + filterCode;
+    style.innerHTML = `.${filterCode} { filter: url(#${filterCode}); }`;
+    document.head.appendChild(style);
 }
 
 

@@ -49,7 +49,6 @@ const idExitFullscreen = document.getElementById("idExitFullscreen");
 const idSimpleModeCheckbox = document.getElementById("idSimpleModeCheckbox");
 
 const idCvdFilterDefs = document.getElementById("idCvdFilterDefs");
-const svgNS = 'https://www.w3.org/2000/svg';
 const ColourShaderToSelectValue = new Map([
     [ColourShader.NONE,             "NONE"          ],
     [ColourShader.ACHROMATOPSIA,    "ACHROMATOPSIA" ],
@@ -92,9 +91,6 @@ function addView(label, param_type=null, param_severity=null) {
     const canvas = clone.querySelector(".glslCanvas");
     const sandbox = new GlslCanvas(canvas);
     
-    const filter = document.createElementNS(svgNS, "filter");
-    const feColorMatrix = document.createElementNS(svgNS, "feColorMatrix");
-    
     const shader_type = clone.querySelector(".shaderType");
     const shader_severity = clone.querySelector(".shaderSeverity");
     const shader_severity_label = clone.querySelector(".severityLabel");
@@ -103,44 +99,35 @@ function addView(label, param_type=null, param_severity=null) {
     root.id = "idView-" + viewUidTracker;
     new_label.textContent = label;
     
-    filter.id = "idViewFilter-" + viewUidTracker;
-    filter.setAttribute("color-interpolation-filters", "sRGB"); // for correct colour-space
-    
-    feColorMatrix.setAttribute("values", `
-        1, 0, 0, 0, 0,
-        0, 1, 0, 0, 0,
-        0, 0, 1, 0, 0,
-        0, 0, 0, 1, 0
-    `);
-    feColorMatrix.setAttribute("type", "matrix");
-    
-    filter.appendChild(feColorMatrix);
-    idCvdFilterDefs.appendChild(filter);
-
     canvas.id = "idViewCanvas-" + viewUidTracker;
-
+    
     shader_type.id = "idShaderType-" + viewUidTracker;
     shader_severity.id = "idShaderSeverity-" + viewUidTracker;
     delete_btn.id = "idDeleteBtn-" + viewUidTracker;
     
     viewUidTracker++;
     totalCurrentVisibleViews++;
-
+    
     idViewsContainer.appendChild(clone);
     
     const resolved_type = param_type != null ? urlCodeToShaderType(param_type) : ColourShader.NONE;
     const resolved_severity = param_severity != null ? parseFloat(param_severity) : 0.5;
-
+    
     setShaderTypeSelect(shader_type, resolved_type);
     shader_severity.value = resolved_severity;
     if (shader_severity_label) shader_severity_label.textContent = resolved_severity.toFixed(2);
     
+    let filterCode = toFilterCode(resolved_type, resolved_severity);
+    getOrComputeCachedMatrix(filterCode);
+
+    canvas.classList.add(filterCode);
+
     const view = {
         root,
         label,
         canvas,
         sandbox, // GlslCanvas Object
-        filter,
+        filterCode, // cvdfX000
         visible: true,
         shaderType: resolved_type,
         shaderSeverity: resolved_severity,
@@ -220,7 +207,6 @@ function deleteView(viewId) {
         totalCurrentEmptyViews--;
     }
 
-    view_to_delete.filter.remove();
     view_to_delete.remove();
     
     const idx = views.findIndex(v => v.root.id === viewId);
@@ -316,12 +302,16 @@ function showFileInView(view, file=currentFile) {
 
 
 function updateViewFilter(view) {
-    const fCM = view.filter.querySelector("feColorMatrix");
-    fCM.setAttribute("values", matrixToRGBAM(
-        getOrComputeCachedMatrix(
-            toFilterCode(view.shaderType, view.shaderSeverity)
-        )
-    ));
+    const newFilterCode = toFilterCode(view.shaderType, view.shaderSeverity);
+
+    if (newFilterCode === view.filterCode) return;
+
+    getOrComputeCachedMatrix(newFilterCode);
+
+    view.canvas.classList.remove(view.filterCode);
+    view.canvas.classList.add(newFilterCode);
+
+    view.filterCode = newFilterCode;
 }
 
 

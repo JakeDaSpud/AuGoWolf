@@ -91,6 +91,10 @@ svg {
     pointer-events: none;
 }
 
+#cvdfN {
+    filter: url(#cvdfN);
+}
+
 #idViewsContainer {
     display: grid;
 
@@ -129,7 +133,7 @@ svg {
 .canvasContainer {
     width: 100%;
     display: block;
-    aspect-ratio: 1;
+    /*aspect-ratio: 1;*/
     margin-top: auto;
 }
 
