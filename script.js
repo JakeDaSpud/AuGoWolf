@@ -48,6 +48,8 @@ const idExitFullscreen = document.getElementById("idExitFullscreen");
 
 const idSimpleModeCheckbox = document.getElementById("idSimpleModeCheckbox");
 
+const idCvdFilterDefs = document.getElementById("idCvdFilterDefs");
+const svgNS = 'https://www.w3.org/2000/svg';
 const ColourShaderToSelectValue = new Map([
     [ColourShader.NONE,             "NONE"          ],
     [ColourShader.ACHROMATOPSIA,    "ACHROMATOPSIA" ],
@@ -90,15 +92,33 @@ function addView(label, param_type=null, param_severity=null) {
     const canvas = clone.querySelector(".glslCanvas");
     const sandbox = new GlslCanvas(canvas);
     
+    const filter = document.createElementNS(svgNS, "filter");
+    const feColorMatrix = document.createElementNS(svgNS, "feColorMatrix");
+    
     const shader_type = clone.querySelector(".shaderType");
     const shader_severity = clone.querySelector(".shaderSeverity");
     const shader_severity_label = clone.querySelector(".severityLabel");
     const delete_btn = clone.querySelector(".deleteBtn");
-
+    
     root.id = "idView-" + viewUidTracker;
     new_label.textContent = label;
     
+    filter.id = "idViewFilter-" + viewUidTracker;
+    filter.setAttribute("color-interpolation-filters", "sRGB"); // for correct colour-space
+    
+    feColorMatrix.setAttribute("values", `
+        1, 0, 0, 0, 0,
+        0, 1, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 1, 0
+    `);
+    feColorMatrix.setAttribute("type", "matrix");
+    
+    filter.appendChild(feColorMatrix);
+    idCvdFilterDefs.appendChild(filter);
+
     canvas.id = "idViewCanvas-" + viewUidTracker;
+
     shader_type.id = "idShaderType-" + viewUidTracker;
     shader_severity.id = "idShaderSeverity-" + viewUidTracker;
     delete_btn.id = "idDeleteBtn-" + viewUidTracker;
@@ -120,6 +140,7 @@ function addView(label, param_type=null, param_severity=null) {
         label,
         canvas,
         sandbox, // GlslCanvas Object
+        filter,
         visible: true,
         shaderType: resolved_type,
         shaderSeverity: resolved_severity,
@@ -198,7 +219,8 @@ function deleteView(viewId) {
     } else if (view_to_delete.className == "emptyView") {
         totalCurrentEmptyViews--;
     }
-    
+
+    view_to_delete.filter.remove();
     view_to_delete.remove();
     
     const idx = views.findIndex(v => v.root.id === viewId);
@@ -235,7 +257,7 @@ function updateFile(file) {
     console.log("new file: ", file);
     currentFile = file;
     sourceUrl = URL.createObjectURL(currentFile);
-    applyAllViewShaders();
+    updateAllViewFilters();
 }
 
 
@@ -258,12 +280,12 @@ function showFileInView(view, file=currentFile) {
         
         masterImageInstance.onload = () => {
             idVideoControls.hidden = true;
-            applyViewShader(view);
+            updateViewFilter(view);
         };
 
         if (masterImageInstance.complete && masterImageInstance.src) {
             idVideoControls.hidden = true;
-            applyViewShader(view);
+            updateViewFilter(view);
         }
     }
 
@@ -275,7 +297,7 @@ function showFileInView(view, file=currentFile) {
 
             masterVideoInstance.onloadedmetadata = () => {
                 idVideoControls.hidden = false;
-                applyViewShader(view);
+                updateViewFilter(view);
     
                 if (videoPlaying) {
                     masterVideoInstance.play();
@@ -287,15 +309,33 @@ function showFileInView(view, file=currentFile) {
         // video already loaded, don't reset view's currentTime or .src
         else {
             idVideoControls.hidden = false;
-            applyViewShader(view);
+            updateViewFilter(view);
         }
     }
 }
 
 
-function applyAllViewShaders() {
+function updateViewFilter(view) {
+    const fCM = view.filter.querySelector("feColorMatrix");
+    fCM.setAttribute("values", matrixToRGBAM(
+        getOrComputeCachedMatrix(
+            toFilterCode(view.shaderType, view.shaderSeverity)
+        )
+    ));
+}
+
+
+function updateAllViewFilters() {
     views.forEach((view) => {
-        applyViewShader(view);
+        updateViewFilter(view);
+    });
+}
+
+
+function applyAllViewShaders() {
+    return; // TEMP ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
+    views.forEach((view) => {
+        updateViewFilter(view);
     });
 }
 
@@ -415,7 +455,7 @@ function setShaderType(viewId, shaderType) {
 
     const view = views[idx];
     view.shaderType = shaderType;
-    applyViewShader(view);
+    updateViewFilter(view);
 }
 
 
@@ -426,7 +466,7 @@ function setShaderSeverity(viewId, shaderSeverity) {
     const view = views[idx];
     view.shaderSeverity = parseFloat(shaderSeverity);
     console.log("setting severity to", view.shaderSeverity);
-    applyViewShader(view);
+    updateViewFilter(view);
 }
 
 
@@ -434,11 +474,6 @@ function timeSecToMinSec(timeInSeconds) {
     const mins = Math.floor(timeInSeconds / 60);
     const secs = Math.floor(timeInSeconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-
-function clamp(value, min, max) {
-    return Math.min(Math.max(value, min), max);
 }
 
 
@@ -486,7 +521,6 @@ function toggleSimpleMode(isSimple=null) {
 function setSimpleModeForView(view, isSimple) {
     const root = view.root;
     if (!root) return;
-    console.log("has root");
 
     // true
         // only name and canvas

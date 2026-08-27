@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 22hr so far -->
+<!-- 25hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -99,6 +99,23 @@
             <img id="idMasterImage" class="viewImage">
             <video id="idMasterVideo" class="viewVideo"></video>
         </div>
+
+        <svg>
+            <!-- Where all the Filter definitions are stored, one per view, and updates on change -->
+            <defs id="idCvdFilterDefs">
+                <!-- Only Filter that's premade, the do-nothing filter -->
+                <filter id="cvdfN">
+                    <feColorMatrix
+                        type="matrix"
+                        values="
+                            1, 0, 0, 0, 0,
+                            0, 1, 0, 0, 0,
+                            0, 0, 1, 0, 0,
+                            0, 0, 0, 1, 0
+                        " />
+                </filter>
+            </defs>
+        </svg>
         
         <!-- One cloned per view, kept out of render tree until cloned -->
         <template id="idViewTemplate">

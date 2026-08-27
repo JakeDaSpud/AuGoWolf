@@ -84,6 +84,13 @@ footer a:hover {
     padding-left: 16px;
 }
 
+svg {
+    width: 0;
+    height: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
 #idViewsContainer {
     display: grid;
 
