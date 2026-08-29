@@ -98,9 +98,15 @@ const svgNS = 'http://www.w3.org/2000/svg';
 function toFilterCode(shaderType, severity) {
     if (shaderType == ColourShader.NONE) {
         return NONE_FILTER_CODE;
-    } else {
-        return 'cvdf' + ColourShader[shaderType][0].toUpperCase() + parseFloat(severity).toFixed(2).replace('.', '');
     }
+    
+    const letter = ColourShader[shaderType]?.[0];
+    if (!letter) {
+        console.warn(`toFilterCode: unrecognised shaderType [${shaderType}], falling back to NONE`);
+        return NONE_FILTER_CODE;
+    }
+
+    return 'cvdf' + letter.toUpperCase() + parseFloat(severity).toFixed(2).replace('.', '');
 }
 
 

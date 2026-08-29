@@ -2,6 +2,8 @@
 // Clones the view template once per label entry,
 // then pushes input file into every cloned view.
 
+const PRESET_LAYOUT_FULL_IRISH = '?layout=Full%20Irish%3B4%3B0%3BReference%3AN%3A0.5%3BAchromatopsia%3AA%3A1%3BMonochromacy%3AA%3A0.5%3B!e%3B!e%3BProtanopia%3AP%3A1%3BProtanomaly%3AP%3A0.5%3B!e%3B!e%3BDeuteranopia%3AD%3A1%3BDeuteranomaly%3AD%3A0.5%3B!e%3B!e%3BTritanopia%3AT%3A1%3BTritanomaly%3AT%3A0.5%3B';
+
 const idHeader = document.getElementById("idHeader");
 const idFooter = document.getElementById("idFooter");
 
@@ -161,7 +163,7 @@ function addView(label, param_type=null, param_severity=null) {
 
     // if a file's already loaded, show it in this new view
     if (currentFile) {
-        showFileInView(view, currentFile);
+        drawViewFrame(view);
     }
 }
 
@@ -236,22 +238,14 @@ function updateGridShape() {
 function updateFile(file) {
     console.log("new file: ", file);
     currentFile = file;
-    sourceUrl = URL.createObjectURL(currentFile);
-    updateAllViewFilters();
-}
-
-
-function showFileInView(view, file=currentFile) {
-    const { canvas } = view;
     
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
 
-    canvas.hidden = false;
-    if (canvas.parentNode) canvas.parentNode.hidden = false;
-    
+    sourceUrl = URL.createObjectURL(currentFile);
+
     if (isImage) {
-        if (masterImageInstance.src !== sourceUrl) {
+        if (masterImageInstance.src != sourceUrl) {
             masterImageInstance.src = sourceUrl;
             // reset video
             masterVideoInstance.removeAttribute('src');
@@ -259,59 +253,61 @@ function showFileInView(view, file=currentFile) {
         
         masterImageInstance.onload = () => {
             idVideoControls.hidden = true;
-            updateViewFilter(view);
+            loadImages();
         };
 
         if (masterImageInstance.complete && masterImageInstance.src) {
             idVideoControls.hidden = true;
-            updateViewFilter(view);
+            loadImages();
         }
     }
 
     else if (isVideo) {
-        if (masterVideoInstance.src !== sourceUrl) {
+        if (masterVideoInstance.src != sourceUrl) {
             masterVideoInstance.src = sourceUrl;
             // reset image
             masterImageInstance.removeAttribute('src');
 
             masterVideoInstance.onloadedmetadata = () => {
                 idVideoControls.hidden = false;
-                updateViewFilter(view);
     
                 if (videoPlaying) {
                     masterVideoInstance.play();
                 } else {
                     masterVideoInstance.pause();
                 }
+
+                views.forEach(drawViewFrame);
             };
         }
         // video already loaded, don't reset view's currentTime or .src
         else {
             idVideoControls.hidden = false;
-            updateViewFilter(view);
         }
     }
+
+    updateAllViewFilters();
 }
 
 
 function updateViewFilter(view) {
-    const newFilterCode = toFilterCode(view.shaderType, view.shaderSeverity);
+    if (!view || !view.canvas) return;
 
+    const newFilterCode = toFilterCode(view.shaderType, view.shaderSeverity);
     if (newFilterCode == view.filterCode) return;
 
     getOrComputeCachedMatrix(newFilterCode);
-
     view.canvas.classList.remove(view.filterCode);
     view.canvas.classList.add(newFilterCode);
-
     view.filterCode = newFilterCode;
-    // MAYBE THIS SHOULDN'T BE HERE
-    updateViewSource(view);
+
+    drawViewFrame(view);
 }
 
 
 function updateAllViewFilters() {
     views.forEach((view) => {
+        if (!view.visible || !view.canvas) return;
         updateViewFilter(view);
     });
 }
@@ -357,27 +353,35 @@ function handlePlayVideo() {
 }
 
 
-function updateViewSource(view) {
+function drawViewFrame(view) {
+    if (!view.canvas) return;
+    const ctx = view.canvas.getContext("2d");
+
     if (imageLoaded()) {
-        view.canvas.getContext("2d").drawImage(masterImageInstance, 0, 0, view.canvas.width, view.canvas.height);
+        ctx.drawImage(masterImageInstance, 0, 0, view.canvas.width, view.canvas.height);
         view.canvas.hidden = false;
+        if (view.canvas.parentNode) view.canvas.parentNode.hidden = false;
+    } else if (videoLoaded()) {
+        ctx.drawImage(masterVideoInstance, 0, 0, view.canvas.width, view.canvas.height);
+        view.canvas.hidden = false;
+        if (view.canvas.parentNode) view.canvas.parentNode.hidden = false;
     }
+}
 
-    else if (videoLoaded()) {
-        masterVideoInstance.addEventListener("timeupdate", () => {
-            function drawNextFrame() {
-                view.canvas.getContext("2d").drawImage(masterVideoInstance, 0, 0, view.canvas.width, view.canvas.height);
-                requestAnimationFrame(drawNextFrame);
-            }
-            requestAnimationFrame(drawNextFrame)
+
+function loadImages() {
+    if (!imageLoaded()) return;
+    views.forEach(drawViewFrame);
+}
+
+
+function videoRenderLoop() {
+    if (videoLoaded() && !masterVideoInstance.paused && !masterVideoInstance.ended) {
+        views.forEach((view) => {
+            if (view.visible && view.canvas && !view.canvas.hidden) drawViewFrame(view);
         });
-        view.canvas.hidden = false;
     }
-
-    else {
-        view.canvas.hidden = true;
-        console.warn("No source loaded.");
-    }
+    requestAnimationFrame(videoRenderLoop);
 }
 
 
@@ -743,7 +747,6 @@ function addAllEventListeners() {
         if (!file) return;
 
         updateFile(file);
-        views.forEach((view) => showFileInView(view));
     });
 
     updateGridShape();
@@ -752,3 +755,4 @@ function addAllEventListeners() {
 
 addAllEventListeners();
 checkUrlParameter();
+requestAnimationFrame(videoRenderLoop);
