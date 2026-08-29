@@ -2,6 +2,20 @@
 // Clones the view template once per label entry,
 // then pushes input file into every cloned view.
 
+// TODO Cleaning
+// - remove unused files
+// - clean up comments
+// - remove unused code
+
+// TODO Features
+// - add preset layouts
+// - add youtube / video url as an option, not just local files?
+
+// FIXME
+// - make images full resolution (or scaled?)
+    // maintain aspect ratio: fit to width
+// - load video -> load image, video still visible on canvas?
+
 const PRESET_LAYOUT_FULL_IRISH = '?layout=Full%20Irish%3B4%3B0%3BReference%3AN%3A0.5%3BAchromatopsia%3AA%3A1%3BMonochromacy%3AA%3A0.5%3B!e%3B!e%3BProtanopia%3AP%3A1%3BProtanomaly%3AP%3A0.5%3B!e%3B!e%3BDeuteranopia%3AD%3A1%3BDeuteranomaly%3AD%3A0.5%3B!e%3B!e%3BTritanopia%3AT%3A1%3BTritanomaly%3AT%3A0.5%3B';
 
 const idHeader = document.getElementById("idHeader");
