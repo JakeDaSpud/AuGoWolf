@@ -91,7 +91,8 @@ const CachedShaders = new Map([
     [NONE_FILTER_CODE, [1, 0, 0, 0, 1, 0, 0, 0, 1]],
 ]);
 
-const svgNS = 'https://www.w3.org/2000/svg';
+// SVG Namespace link
+const svgNS = 'http://www.w3.org/2000/svg';
 
 
 function toFilterCode(shaderType, severity) {

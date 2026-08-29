@@ -89,7 +89,6 @@ function addView(label, param_type=null, param_severity=null) {
     const new_label = clone.querySelector(".viewLabel");
     
     const canvas = clone.querySelector(".glslCanvas");
-    const sandbox = new GlslCanvas(canvas);
     
     const shader_type = clone.querySelector(".shaderType");
     const shader_severity = clone.querySelector(".shaderSeverity");
@@ -126,7 +125,6 @@ function addView(label, param_type=null, param_severity=null) {
         root,
         label,
         canvas,
-        sandbox, // GlslCanvas Object
         filterCode, // cvdfX000
         visible: true,
         shaderType: resolved_type,
@@ -211,10 +209,6 @@ function deleteView(viewId) {
     
     const idx = views.findIndex(v => v.root.id === viewId);
     if (idx !== -1) {
-        if (views[idx].sandbox) {
-            views[idx].sandbox.destroy();
-        }
-
         views.splice(idx, 1);
         if (totalCurrentVisibleViews === 0) idVideoControls.hidden = true;
     }
@@ -248,8 +242,7 @@ function updateFile(file) {
 
 
 function showFileInView(view, file=currentFile) {
-    const { canvas, sandbox } = view;
-    if (!sandbox) return;
+    const { canvas } = view;
     
     const isImage = file.type.startsWith("image/");
     const isVideo = file.type.startsWith("video/");
@@ -304,7 +297,7 @@ function showFileInView(view, file=currentFile) {
 function updateViewFilter(view) {
     const newFilterCode = toFilterCode(view.shaderType, view.shaderSeverity);
 
-    if (newFilterCode === view.filterCode) return;
+    if (newFilterCode == view.filterCode) return;
 
     getOrComputeCachedMatrix(newFilterCode);
 
@@ -312,6 +305,8 @@ function updateViewFilter(view) {
     view.canvas.classList.add(newFilterCode);
 
     view.filterCode = newFilterCode;
+    // MAYBE THIS SHOULDN'T BE HERE
+    updateViewSource(view);
 }
 
 
@@ -358,6 +353,30 @@ function handlePlayVideo() {
     else {
         masterVideoInstance.pause();
         idVideoPlayBtn.innerHTML = "Resume";
+    }
+}
+
+
+function updateViewSource(view) {
+    if (imageLoaded()) {
+        view.canvas.getContext("2d").drawImage(masterImageInstance, 0, 0, view.canvas.width, view.canvas.height);
+        view.canvas.hidden = false;
+    }
+
+    else if (videoLoaded()) {
+        masterVideoInstance.addEventListener("timeupdate", () => {
+            function drawNextFrame() {
+                view.canvas.getContext("2d").drawImage(masterVideoInstance, 0, 0, view.canvas.width, view.canvas.height);
+                requestAnimationFrame(drawNextFrame);
+            }
+            requestAnimationFrame(drawNextFrame)
+        });
+        view.canvas.hidden = false;
+    }
+
+    else {
+        view.canvas.hidden = true;
+        console.warn("No source loaded.");
     }
 }
 
