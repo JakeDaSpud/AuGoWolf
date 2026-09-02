@@ -8,27 +8,29 @@
 // - remove unused code
 
 // TODO Features
-// - add preset layouts
 // - add youtube / video url as an option, not just local files?
+// - checkbox -> remove filter while hovering "show to reference on hover"
 
 // FIXME
 // - make images full resolution (or scaled?)
     // maintain aspect ratio: fit to width
 // - load video -> load image, video still visible on canvas?
 
-const PRESET_LAYOUT_FULL_IRISH = ''
-const PRESET_LAYOUT_PROTAN_SCALE = '?layout=Protanopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
-const PRESET_LAYOUT_DEUTERAN_SCALE = '?layout=Deuteranopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
-const PRESET_LAYOUT_TRITAN_SCALE = '?layout=Tritanopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
-const PRESET_LAYOUT_ACHROMA_SCALE = '?layout=Achromatopsia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
-
 const LayoutPresetValueToUrlCode = new Map([
-    ["NONE",     ''],
-    ["FULL",     'Full Irish;4;0;Reference:N:0.5;Achromatopsia:A:1;Monochromacy:A:0.5;!e;!e;Protanopia:P:1;Protanomaly:P:0.5;!e;!e;Deuteranopia:D:1;Deuteranomaly:D:0.5;!e;!e;Tritanopia:T:1;Tritanomaly:T:0.5;'],
-    ["ACHROMA",  'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 20%:A:0.2;Monochromatic 40%:A:0.4;Monochromatic 60%:A:0.6;Monochromatic 80%:A:0.8;Achromatopsic 100%:A:1;'],
-    ["PROTAN",   'Protanopia Scale;6;0;Reference:N:0.5;Protanomalous 20%:P:0.2;Protanomalous 40%:P:0.4;Protanomalous 60%:P:0.6;Protanomalous 80%:P:0.8;Protanopic 100%:P:1;'],
-    ["DEUTERAN", 'Deuteranopia Scale;6;0;Reference:N:0.5;Deuteranomalous 20%:D:0.2;Deuteranomalous 40%:D:0.4;Deuteranomalous 60%:D:0.6;Deuteranomalous 80%:D:0.8;Deuteranopic 100%:D:1;'],
-    ["TRITAN",   'Tritanopia Scale;6;0;Reference:N:0.5;Tritanomalous 20%:T:0.2;Tritanomalous 40%:T:0.4;Tritanomalous 60%:T:0.6;Tritanomalous 80%:T:0.8;Tritanopic 100%:T:1;']
+    ["NONE",       ''],
+    ["FULL",      'Full Irish;3;0;Reference:N:0.5;Monochromacy:A:0.5;Achromatopsia:A:1;Reference:N:0.5;Protanomaly:P:0.5;Protanopia:P:1;Reference:N:0.5;Deuteranomaly:D:0.5;Deuteranopia:D:1;Reference:N:0.5;Tritanomaly:T:0.5;Tritanopia:T:1;'],
+    
+    ["ACHROMA5",   'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 20%:A:0.2;Monochromatic 40%:A:0.4;Monochromatic 60%:A:0.6;Monochromatic 80%:A:0.8;Achromatopsic 100%:A:1;'],
+    ["ACHROMA10",  'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 10%:A:0.1;Monochromatic 20%:A:0.2;Monochromatic 30%:A:0.3;Monochromatic 40%:A:0.4;Monochromatic 50%:A:0.5;Reference:N:0.5;Monochromatic 60%:A:0.6;Monochromatic 70%:A:0.7;Monochromatic 80%:A:0.8;Monochromatic 90%:A:0.9;Achromatopsic 100%:A:1;'],
+    
+    ["PROTAN5",    'Protanopia Scale;6;0;Reference:N:0.5;Protanomalous 20%:P:0.2;Protanomalous 40%:P:0.4;Protanomalous 60%:P:0.6;Protanomalous 80%:P:0.8;Protanopic 100%:P:1;'],
+    ["PROTAN10",   'Protanopia Scale;6;0;Reference:N:0.5;Protanomalous 10%:P:0.1;Protanomalous 20%:P:0.2;Protanomalous 30%:P:0.3;Protanomalous 40%:P:0.4;Protanomalous 50%:P:0.5;Reference:N:0.5;Protanomalous 60%:P:0.6;Protanomalous 70%:P:0.7;Protanomalous 80%:P:0.8;Protanomalous 90%:P:0.9;Protanopic 100%:P:1;'],
+    
+    ["DEUTERAN5",  'Deuteranopia Scale;6;0;Reference:N:0.5;Deuteranomalous 20%:D:0.2;Deuteranomalous 40%:D:0.4;Deuteranomalous 60%:D:0.6;Deuteranomalous 80%:D:0.8;Deuteranopic 100%:D:1;'],
+    ["DEUTERAN10", 'Deuteranopia Scale;6;0;Reference:N:0.5;Deuteranomalous 10%:D:0.1;Deuteranomalous 20%:D:0.2;Deuteranomalous 30%:D:0.3;Deuteranomalous 40%:D:0.4;Deuteranomalous 50%:D:0.5;Reference:N:0.5;Deuteranomalous 60%:D:0.6;Deuteranomalous 70%:D:0.7;Deuteranomalous 80%:D:0.8;Deuteranomalous 90%:D:0.9;Deuteranopic 100%:D:1;'],
+    
+    ["TRITAN5",    'Tritanopia Scale;6;0;Reference:N:0.5;Tritanomalous 20%:T:0.2;Tritanomalous 40%:T:0.4;Tritanomalous 60%:T:0.6;Tritanomalous 80%:T:0.8;Tritanopic 100%:T:1;'],
+    ["TRITAN10",   'Tritanopia Scale;6;0;Reference:N:0.5;Tritanomalous 10%:T:0.1;Tritanomalous 20%:T:0.2;Tritanomalous 30%:T:0.3;Tritanomalous 40%:T:0.4;Tritanomalous 50%:T:0.5;Reference:N:0.5;Tritanomalous 60%:T:0.6;Tritanomalous 70%:T:0.7;Tritanomalous 80%:T:0.8;Tritanomalous 90%:T:0.9;Tritanopic 100%:T:1;'],
 ]);
 
 const idHeader = document.getElementById("idHeader");
