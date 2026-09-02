@@ -16,7 +16,20 @@
     // maintain aspect ratio: fit to width
 // - load video -> load image, video still visible on canvas?
 
-const PRESET_LAYOUT_FULL_IRISH = '?layout=Full%20Irish%3B4%3B0%3BReference%3AN%3A0.5%3BAchromatopsia%3AA%3A1%3BMonochromacy%3AA%3A0.5%3B!e%3B!e%3BProtanopia%3AP%3A1%3BProtanomaly%3AP%3A0.5%3B!e%3B!e%3BDeuteranopia%3AD%3A1%3BDeuteranomaly%3AD%3A0.5%3B!e%3B!e%3BTritanopia%3AT%3A1%3BTritanomaly%3AT%3A0.5%3B';
+const PRESET_LAYOUT_FULL_IRISH = ''
+const PRESET_LAYOUT_PROTAN_SCALE = '?layout=Protanopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
+const PRESET_LAYOUT_DEUTERAN_SCALE = '?layout=Deuteranopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
+const PRESET_LAYOUT_TRITAN_SCALE = '?layout=Tritanopia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
+const PRESET_LAYOUT_ACHROMA_SCALE = '?layout=Achromatopsia%20Scale%3B4%3B0%3BReference%3AN%3A0.5%3B';
+
+const LayoutPresetValueToUrlCode = new Map([
+    ["NONE",     ''],
+    ["FULL",     'Full Irish;4;0;Reference:N:0.5;Achromatopsia:A:1;Monochromacy:A:0.5;!e;!e;Protanopia:P:1;Protanomaly:P:0.5;!e;!e;Deuteranopia:D:1;Deuteranomaly:D:0.5;!e;!e;Tritanopia:T:1;Tritanomaly:T:0.5;'],
+    ["ACHROMA",  'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 20%:A:0.2;Monochromatic 40%:A:0.4;Monochromatic 60%:A:0.6;Monochromatic 80%:A:0.8;Achromatopsic 100%:A:1;'],
+    ["PROTAN",   'Protanopia Scale;6;0;Reference:N:0.5;Protanomalous 20%:P:0.2;Protanomalous 40%:P:0.4;Protanomalous 60%:P:0.6;Protanomalous 80%:P:0.8;Protanopic 100%:P:1;'],
+    ["DEUTERAN", 'Deuteranopia Scale;6;0;Reference:N:0.5;Deuteranomalous 20%:D:0.2;Deuteranomalous 40%:D:0.4;Deuteranomalous 60%:D:0.6;Deuteranomalous 80%:D:0.8;Deuteranopic 100%:D:1;'],
+    ["TRITAN",   'Tritanopia Scale;6;0;Reference:N:0.5;Tritanomalous 20%:T:0.2;Tritanomalous 40%:T:0.4;Tritanomalous 60%:T:0.6;Tritanomalous 80%:T:0.8;Tritanopic 100%:T:1;']
+]);
 
 const idHeader = document.getElementById("idHeader");
 const idFooter = document.getElementById("idFooter");
@@ -24,6 +37,9 @@ const idFooter = document.getElementById("idFooter");
 const idControls = document.getElementById("idControls");
 const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
+
+const idPresetLayoutSelect = document.getElementById("idPresetLayoutSelect");
+const idPresetLayoutSubmitBtn = document.getElementById("idPresetLayoutSubmitBtn");
 
 const idLayoutNameText = document.getElementById("idLayoutNameText");
 const idLabelText = document.getElementById("idLabelText");
@@ -433,9 +449,15 @@ function handleLoopVideo() {
 
 
 function handleDeleteAllViews() {
+    deleteAllViews();
+}
+
+
+function deleteAllViews() {
     while (views.length > 0) {
         deleteView(views[0].root.id);
     }
+    setViewCounts();
 }
 
 
@@ -567,9 +589,35 @@ function setSimpleModeForAllViews(isSimple) {
 }
 
 
+function handlePresetLayout() {
+    resetLayout();
+
+    let preset_layout_url_code = LayoutPresetValueToUrlCode.get(idPresetLayoutSelect.value);
+    console.log(preset_layout_url_code);
+    buildLayoutFromUrlCode(preset_layout_url_code, true);
+}
+
+
+function resetLayout() {
+    deleteAllViews();
+    
+    idLayoutNameText.value = '';
+    
+    idColumnAmount.value = 3;
+    updateGridShape();
+    
+    idLayoutUrl.value = '';
+
+    idSimpleModeCheckbox.checked = false;
+    toggleSimpleMode(idSimpleModeCheckbox.checked);
+}
+
+
 function checkUrlParameter() {
     let params = new URLSearchParams(document.location.search);
     let layout = params.get('layout');
+
+    console.log("layout from params.get() ", layout);
 
     if (layout != "") {
         last_layout_url = layout;
@@ -681,8 +729,13 @@ function urlCodeToShaderType(code) {
 }
 
 
-function buildLayoutFromUrlCode(urlCode) {
-    idLayoutUrl.value = last_layout_url;
+function buildLayoutFromUrlCode(urlCode, override=false) {
+    if (override) {
+        idLayoutUrl.value = urlCode;
+    } else {
+        idLayoutUrl.value = last_layout_url;
+    }
+
     console.log('last_layout_url is now [', last_layout_url, ']');
     if (!urlCode) return;
 
@@ -738,6 +791,8 @@ function addAllEventListeners() {
     idDeleteAllViewsBtn.addEventListener("click", handleDeleteAllViews);
 
     idColumnAmount.addEventListener("input", updateGridShape);
+
+    idPresetLayoutSubmitBtn.addEventListener("click", handlePresetLayout);
 
     idLayoutUrl.addEventListener("onclick", copyUrl);
     idGenerateLayoutUrlBtn.addEventListener("click", generateAndCopyLayoutUrl);

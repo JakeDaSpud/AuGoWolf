@@ -1,6 +1,6 @@
 <!-- Made by Jake O'Reilly -->
 <!-- https://jakedaspud.github.io/JakeDaSpud/ -->
-<!-- 28.5hr so far -->
+<!-- 29hr so far -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -31,6 +31,21 @@
     
                 <div id="viewSettings">
                     <h2>View Layout</h2>
+
+                    <div>
+                        <label>
+                        Preset Layout: 
+                            <select id="idPresetLayoutSelect">
+                                <option value="NONE">None</option>
+                                <option value="FULL">Full</option>
+                                <option value="ACHROMA">Achromatopsia</option>
+                                <option value="PROTAN">Protanopia</option>
+                                <option value="DEUTERAN">Deuteranopia</option>
+                                <option value="TRITAN">Tritanopia</option>
+                            </select>
+                            <button id="idPresetLayoutSubmitBtn">Select</button>
+                        </label>
+                    </div>
                     
                     <input type="text" name="nameLayoutNameText" id="idLayoutNameText" placeholder="Unnamed Layout">
 
@@ -49,7 +64,7 @@
                         <button id="idDeleteAllViewsBtn" type="button" disabled>Delete all Views</button>
         
                         <div>
-                            <label for="idColumnAmount">Columns (1 or more)</label>
+                            <label for="idColumnAmount">Columns (1 or more):</label>
                             <input type="number" name="nameColumnLabel" id="idColumnAmount" min="1" value="3">
                         </div>
         
