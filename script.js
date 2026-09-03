@@ -14,7 +14,6 @@
 // FIXME
 // - make images full resolution (or scaled?)
     // maintain aspect ratio: fit to width
-// - load video -> load image, video still visible on canvas?
 
 const LayoutPresetValueToUrlCode = new Map([
     ["NONE",       ''],
@@ -388,6 +387,8 @@ function handlePlayVideo() {
 function drawViewFrame(view) {
     if (!view.canvas) return;
     const ctx = view.canvas.getContext("2d");
+    // erase previous frame displayed, to prevent .PNG from displaying over a previous video frame
+    ctx.clearRect(0, 0, view.canvas.width, view.canvas.height);
 
     if (imageLoaded()) {
         ctx.drawImage(masterImageInstance, 0, 0, view.canvas.width, view.canvas.height);
