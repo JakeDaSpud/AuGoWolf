@@ -10,6 +10,7 @@
 // TODO Features
 // - add youtube / video url as an option, not just local files?
 // - checkbox -> remove filter while hovering "show to reference on hover"
+// - add more matrix types, only Machado 2009 right now, apparently poor for Tritanopia simulation!
 
 // FIXME
 // - make images full resolution (or scaled?)
@@ -232,17 +233,18 @@ function deleteView(viewId) {
     const view_to_delete = document.getElementById(viewId);
     if (!view_to_delete) return;
 
-    if (view_to_delete.className == "view") {
+    const view_idx = views.findIndex(v => v.root.id === viewId);
+
+    if (views[view_idx].visible) {
         totalCurrentVisibleViews--;
-    } else if (view_to_delete.className == "emptyView") {
+    } else {
         totalCurrentEmptyViews--;
     }
 
     view_to_delete.remove();
     
-    const idx = views.findIndex(v => v.root.id === viewId);
-    if (idx !== -1) {
-        views.splice(idx, 1);
+    if (view_idx !== -1) {
+        views.splice(view_idx, 1);
         if (totalCurrentVisibleViews === 0) idVideoControls.hidden = true;
     }
 
@@ -460,7 +462,6 @@ function deleteAllViews() {
     while (views.length > 0) {
         deleteView(views[0].root.id);
     }
-    setViewCounts();
 }
 
 
@@ -530,11 +531,13 @@ function timeSecToMinSec(timeInSeconds) {
 
 
 function setViewCounts() {
-    idTotalViewCount.innerHTML = totalCurrentVisibleViews + totalCurrentEmptyViews;
+    const total_view_count = totalCurrentVisibleViews + totalCurrentEmptyViews;
+
+    idTotalViewCount.innerHTML = total_view_count;
     idVisibleViewCount.innerHTML = totalCurrentVisibleViews;
     idEmptyViewCount.innerHTML = totalCurrentEmptyViews;
 
-    if (totalCurrentVisibleViews + totalCurrentEmptyViews <= 0) {
+    if (total_view_count <= 0) {
         idDeleteAllViewsBtn.disabled = true;
     } else {
         idDeleteAllViewsBtn.disabled = false;
