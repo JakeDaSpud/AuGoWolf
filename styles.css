@@ -1,3 +1,6 @@
+/* AuGoWolf by Jake O'Reilly */
+/* https://jakedaspud.github.io/JakeDaSpud/ */
+
 :root {
     /* All Pico-8 Colours from https://lospec.com/palette-list/pico-8 */
     --p8-black: #000000;
@@ -94,16 +97,6 @@ svg {
 #cvdfN {
     filter: url(#cvdfN);
 }
-
-/*
-
-create one class for each new view
-
-#cvdfX123IdOfViewCanvas {
-    filter: url(#idOfFilter);
-}
-
-*/
 
 #idViewsContainer {
     display: grid;

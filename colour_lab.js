@@ -1,15 +1,14 @@
-// Shader matrices
-// --- Pre-calculated Transformation Matrices ---
+// AuGoWolf by Jake O'Reilly
+// https://jakedaspud.github.io/JakeDaSpud/
 
 // Transformation Matrices for Pre-computed Colour Blindness Transformations
 // link: https://www.inf.ufrgs.br/%7Eoliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
 // Citation: Gustavo M. Machado, Manuel M. Oliveira, and Leandro A. F. Fernandes "A Physiologically-based Model for Simulation of Color Vision Deficiency". IEEE Transactions on Visualization and Computer Graphics. Volume 15 (2009), Number 6, November/December 2009. pp. 1291-1298.
 
-// Key: Severity 0.0 to 1.0
-// Value: Corresponding Matrix
-
 const NONE_FILTER_CODE = 'cvdfN';
 
+// Key: Severity 0.0 to 1.0
+// Value: Corresponding Matrix
 const ACHROMAT_MATRIX = {
     "0.0": [1,          0,          0,            0,        1,          0,           0,         0,          1       ],
     "0.1": [0.921260,   0.071520,   0.007220,     0.021260, 0.971520,   0.007220,    0.021260,  0.071520,   0.907220],
@@ -170,10 +169,8 @@ function matrixToRGBAM(matrix) {
 // Returns RGB Matrix, still needs to be converted to RGBAM for feColorMatrix.values
 function getOrComputeCachedMatrix(filterCode) {
     if (CachedShaders.has(filterCode)) {
-        // Hit
         return CachedShaders.get(filterCode);
     } else {
-        // Miss
         console.log(`Adding new entry for CachedShaders[${filterCode}]`);
         
         const computed = getSeverityMatrix(
@@ -269,7 +266,6 @@ function getSeverityMatrix(severityMatrix, severity) {
         return null;
     }
 
-    // weight as a PERCENTAGE between the two 0.1 fixed decimals
     const weight = (try_parse_float - prev_index) / (next_val - prev_val);
     
     const lerp_matrix_out = new Array(prev_matrix.length);
@@ -291,7 +287,6 @@ function calculateLuminanceMatrix(severity) {
     const gLuminanceWeight = 0.7152;
     const bLuminanceWeight = 0.0722;
     
-    //         v Identity matrix values
     const rR = (1 + (rLuminanceWeight - 1) * severity_float).toFixed(6);
     const rG = (0 + (gLuminanceWeight - 0) * severity_float).toFixed(6);
     const rB = (0 + (bLuminanceWeight - 0) * severity_float).toFixed(6);
