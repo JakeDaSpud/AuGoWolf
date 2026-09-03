@@ -1,14 +1,12 @@
 // AuGoWolf by Jake O'Reilly
 // https://jakedaspud.github.io/JakeDaSpud/
 
-// TODO Cleaning
-// - remove unused files
-
 // TODO Features
-// - add youtube / video url as an option, not just local files?
-    // can't use youtube, need to use an iFrame for that, temp direct src link is to an Analogue video: https://assets.analogue.co/video/pocket/case.f91fca4b55d87332cb4ee5c1d7b9f03a.mp4
+// temp direct src link is to a Google video: https://www.gstatic.com/marketing-cms/2b/2d/5773dbe7444982c82d71c4c0aa50/gemini-live.mp4
 // - checkbox -> remove filter while hovering "show to reference on hover"
 // - add more matrix types, only Machado 2009 right now, apparently poor for Tritanopia simulation!
+    // this site https://daltonlens.org/colorblindness-simulator
+    // uses: Brettel 1997, Viénot 1999, Machado 2009 (with missing sRGB version), Vischeck (GIMP), Coblis V1 and V2
 
 // FIXME
 // - make images full resolution (or scaled?)
@@ -17,8 +15,8 @@
 
 const LayoutPresetValueToUrlCode = new Map([
     ["NONE",       ''],
-    ["FULLHALF",      'Full Irish;3;0;Reference:N:0.5;Monochromacy:A:0.5;Achromatopsia:A:1;Reference:N:0.5;Protanomaly:P:0.5;Protanopia:P:1;Reference:N:0.5;Deuteranomaly:D:0.5;Deuteranopia:D:1;Reference:N:0.5;Tritanomaly:T:0.5;Tritanopia:T:1;'],
-    ["FULL", ]
+    ["FULL",       'Full Severities;5;0;Reference:N:0.5;Achromatopsia:A:1;Protanopia:P:1.0;Deuteranopia:D:1.0;Tritanopia:T:1.0;'],
+    ["FULLHALF",   'Full and Half Severities;3;0;Reference:N:0.5;Monochromacy:A:0.5;Achromatopsia:A:1;Reference:N:0.5;Protanomaly:P:0.5;Protanopia:P:1;Reference:N:0.5;Deuteranomaly:D:0.5;Deuteranopia:D:1;Reference:N:0.5;Tritanomaly:T:0.5;Tritanopia:T:1;'],
     
     ["ACHROMA5",   'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 20%:A:0.2;Monochromatic 40%:A:0.4;Monochromatic 60%:A:0.6;Monochromatic 80%:A:0.8;Achromatopsic 100%:A:1;'],
     ["ACHROMA10",  'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 10%:A:0.1;Monochromatic 20%:A:0.2;Monochromatic 30%:A:0.3;Monochromatic 40%:A:0.4;Monochromatic 50%:A:0.5;Reference:N:0.5;Monochromatic 60%:A:0.6;Monochromatic 70%:A:0.7;Monochromatic 80%:A:0.8;Monochromatic 90%:A:0.9;Achromatopsic 100%:A:1;'],
@@ -39,6 +37,8 @@ const idFooter = document.getElementById("idFooter");
 const idControls = document.getElementById("idControls");
 const idFullscreenControls = document.getElementById("idFullscreenControls");
 const idFileInput = document.getElementById("idFileInput");
+const idFileReference = document.getElementById("idFileReference");
+const idFileReferenceUploadBtn = document.getElementById("idFileReferenceUploadBtn");
 
 const idPresetLayoutSelect = document.getElementById("idPresetLayoutSelect");
 const idPresetLayoutSubmitBtn = document.getElementById("idPresetLayoutSubmitBtn");
@@ -272,10 +272,17 @@ function updateFile(file) {
     console.log("new file: ", file);
     currentFile = file;
     
-    const isImage = file.type.startsWith("image/");
-    const isVideo = file.type.startsWith("video/");
+    if (typeof sourceUrl === 'string' && sourceUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(sourceUrl);
+    }
 
-    sourceUrl = URL.createObjectURL(currentFile);
+    const isLocalFile = file instanceof Blob;
+    const mimeType = isLocalFile ? file.type : (file.type || '');
+
+    const isImage = mimeType.startsWith("image/");
+    const isVideo = mimeType.startsWith("video/");
+
+    sourceUrl = isLocalFile ? URL.createObjectURL(currentFile) : (file.url || file);
 
     if (isImage) {
         if (masterImageInstance.src != sourceUrl) {
@@ -447,6 +454,18 @@ function handleLoopVideo() {
 
 function handleDeleteAllViews() {
     deleteAllViews();
+}
+
+async function handleUploadFileReference() {
+    const file_ref = idFileReference.value;
+    if (!file_ref) return;
+
+    const result = await validateMediaUrl(file_ref);
+    if (result.valid) {
+        updateFile({ url: file_ref, type: result.type });
+    } else {
+        console.error(`Invalid media URL [${result.reason}]`);
+    }
 }
 
 
@@ -771,6 +790,25 @@ function buildLayoutFromUrlCode(urlCode, override=false) {
 }
 
 
+function validateMediaUrl(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ valid: true, type: 'image/' });
+        img.onerror = () => {
+            const video = document.createElement('video');
+            video.preload = 'metadata';
+
+            video.onloadedmetadata = () => resolve({ valid: true, type: 'video/' });
+            video.onerror = () => resolve({ valid: false, reason: 'Failed to load media or unsupported format' });
+
+            video.src = url;
+        };
+
+        img.src = url;
+    });
+}
+
+
 function addAllEventListeners() {
     idAddLabelBtn.addEventListener("click", handleAddLabel);
     idAddEmptyViewBtn.addEventListener("click", handleAddEmpty);
@@ -808,6 +846,8 @@ function addAllEventListeners() {
 
     masterVideoInstance.addEventListener("loadedmetadata", setVideoDuration);
     masterVideoInstance.addEventListener("timeupdate", setCurrentTimestamp);
+    
+    idFileReferenceUploadBtn.addEventListener("click", handleUploadFileReference);
 
     idFileInput.addEventListener("change", () => {
         const file = idFileInput.files[0];

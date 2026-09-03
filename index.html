@@ -25,7 +25,15 @@
                     <h2>File Settings</h2>
     
                     <div id="idUploadFile" name="nameUploadFile">
-                        <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
+                        <label>
+                            Local File:
+                            <input type="file" id="idFileInput" accept="image/png,image/jpeg,video/mp4,video/mkv">
+                        </label><br>
+                        <label>
+                            File URL:
+                            <input type="text" name="nameReferenceFile" id="idFileReference" placeholder="Image/Video URL">
+                            <button id="idFileReferenceUploadBtn">Upload</button>
+                        </label>
                     </div>
                 </div>
     
@@ -37,7 +45,8 @@
                         Preset Layout: 
                             <select id="idPresetLayoutSelect">
                                 <option value="NONE">None</option>
-                                <option value="FULL">Full</option>
+                                <option value="FULL">Full Severities</option>
+                                <option value="FULLHALF">Full and Half Severities</option>
                                 <option value="ACHROMA5">Achromatopsia in 5</option>
                                 <option value="ACHROMA10">Achromatopsia in 10</option>
                                 <option value="PROTAN5">Protanopia in 5</option>
