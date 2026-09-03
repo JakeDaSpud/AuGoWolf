@@ -6,16 +6,19 @@
 
 // TODO Features
 // - add youtube / video url as an option, not just local files?
+    // can't use youtube, need to use an iFrame for that, temp direct src link is to an Analogue video: https://assets.analogue.co/video/pocket/case.f91fca4b55d87332cb4ee5c1d7b9f03a.mp4
 // - checkbox -> remove filter while hovering "show to reference on hover"
 // - add more matrix types, only Machado 2009 right now, apparently poor for Tritanopia simulation!
 
 // FIXME
 // - make images full resolution (or scaled?)
     // maintain aspect ratio: fit to width
+// - changing preset layout during video hid the video controls :/
 
 const LayoutPresetValueToUrlCode = new Map([
     ["NONE",       ''],
-    ["FULL",      'Full Irish;3;0;Reference:N:0.5;Monochromacy:A:0.5;Achromatopsia:A:1;Reference:N:0.5;Protanomaly:P:0.5;Protanopia:P:1;Reference:N:0.5;Deuteranomaly:D:0.5;Deuteranopia:D:1;Reference:N:0.5;Tritanomaly:T:0.5;Tritanopia:T:1;'],
+    ["FULLHALF",      'Full Irish;3;0;Reference:N:0.5;Monochromacy:A:0.5;Achromatopsia:A:1;Reference:N:0.5;Protanomaly:P:0.5;Protanopia:P:1;Reference:N:0.5;Deuteranomaly:D:0.5;Deuteranopia:D:1;Reference:N:0.5;Tritanomaly:T:0.5;Tritanopia:T:1;'],
+    ["FULL", ]
     
     ["ACHROMA5",   'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 20%:A:0.2;Monochromatic 40%:A:0.4;Monochromatic 60%:A:0.6;Monochromatic 80%:A:0.8;Achromatopsic 100%:A:1;'],
     ["ACHROMA10",  'Achromatopsia Scale;6;0;Reference:N:0.5;Monochromatic 10%:A:0.1;Monochromatic 20%:A:0.2;Monochromatic 30%:A:0.3;Monochromatic 40%:A:0.4;Monochromatic 50%:A:0.5;Reference:N:0.5;Monochromatic 60%:A:0.6;Monochromatic 70%:A:0.7;Monochromatic 80%:A:0.8;Monochromatic 90%:A:0.9;Achromatopsic 100%:A:1;'],
