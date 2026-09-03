@@ -1,11 +1,8 @@
-// AuGoWolf
-// Clones the view template once per label entry,
-// then pushes input file into every cloned view.
+// AuGoWolf by Jake O'Reilly
+// https://jakedaspud.github.io/JakeDaSpud/
 
 // TODO Cleaning
 // - remove unused files
-// - clean up comments
-// - remove unused code
 
 // TODO Features
 // - add youtube / video url as an option, not just local files?
@@ -122,7 +119,7 @@ function addView(label, param_type=null, param_severity=null) {
     const root = clone.querySelector(".view");
     const new_label = clone.querySelector(".viewLabel");
     
-    const canvas = clone.querySelector(".glslCanvas");
+    const canvas = clone.querySelector(".outputCanvas");
     
     const shader_type = clone.querySelector(".shaderType");
     const shader_severity = clone.querySelector(".shaderSeverity");
