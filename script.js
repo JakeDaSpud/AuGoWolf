@@ -346,14 +346,6 @@ function updateAllViewFilters() {
 }
 
 
-function applyAllViewShaders() {
-    return; // TEMP ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! ! !
-    views.forEach((view) => {
-        updateViewFilter(view);
-    });
-}
-
-
 function handleAddLabel() {
     const label = idLabelText.value.trim();
 

@@ -282,37 +282,8 @@ function getSeverityMatrix(severityMatrix, severity) {
 }
 
 
-// For Colour Vision Deficiency of the Protan-, Deuteran-, Tritan- types
-function buildMatrixMultiplyGLSL(matrix) {
-    return `
-        vec2 st = gl_FragCoord.xy / u_resolution;
-        vec4 colour = texture2D(tex0, st);
-        vec3 row0 = vec3(${matrix[0]}, ${matrix[1]}, ${matrix[2]});
-        vec3 row1 = vec3(${matrix[3]}, ${matrix[4]}, ${matrix[5]});
-        vec3 row2 = vec3(${matrix[6]}, ${matrix[7]}, ${matrix[8]});
-        float outR = dot(colour.rgb, row0);
-        float outG = dot(colour.rgb, row1);
-        float outB = dot(colour.rgb, row2);
-        gl_FragColor = vec4(outR, outG, outB, colour.a);
-    `;
-}
-
-
 // For Colour Vision Deficiency of Achromatopsia and Monochromacy
 // RGB Weights from Rec. 709 https://en.wikipedia.org/wiki/Rec._709#:~:text=0.2126%2C%200.7152%2C%20and%200.0722
-function buildLuminanceGLSL(severity) {
-    const severity_float = parseFloat(severity).toFixed(6);
-    return `
-        vec2 st = gl_FragCoord.xy / u_resolution;
-        vec4 colour = texture2D(tex0, st);
-        vec3 rgb_weights = vec3(0.2126, 0.7152, 0.0722);
-        float grey = dot(colour.rgb, rgb_weights);
-        vec3 result = mix(colour.rgb, vec3(grey), ${severity_float});
-        gl_FragColor = vec4(result, colour.a);
-    `;
-}
-
-
 function calculateLuminanceMatrix(severity) {
     const severity_float = clamp(parseFloat(severity), 0, 1).toFixed(6);
 
@@ -338,86 +309,6 @@ function calculateLuminanceMatrix(severity) {
         gR, gG, gB,
         bR, bG, bB
     ];
-}
-
-
-function generateGLSLShader(selectedFilter=ColourShader.NONE, severity=1.0) {
-    if (typeof(severity) == "string") {
-        severity = parseFloat(severity);
-    }
-
-    let shaderCode = `
-        #ifdef GL_ES
-        precision highp float;
-        #endif
-
-        uniform sampler2D tex0;
-        uniform vec2 u_resolution;
-
-        void main() {
-    `;
-    
-    switch(selectedFilter) {
-        case ColourShader.NONE:
-            shaderCode += `
-                vec2 st = gl_FragCoord.xy / u_resolution;
-                vec4 colour = texture2D(tex0, st);
-                gl_FragColor = colour;
-            `;
-            break;
-        
-        case ColourShader.ACHROMATOPSIA:
-            shaderCode += buildLuminanceGLSL(severity);
-            break;
-        
-        case ColourShader.PROTANOPIA:
-            shaderCode += buildMatrixMultiplyGLSL(
-                getSeverityMatrix(PROTAN_MATRIX, severity)
-            );
-            break;
-        
-        case ColourShader.DEUTERANOPIA:
-            shaderCode += buildMatrixMultiplyGLSL(
-                getSeverityMatrix(DEUTERAN_MATRIX, severity)
-            );
-            break;
-        
-        case ColourShader.TRITANOPIA:
-            shaderCode += buildMatrixMultiplyGLSL(
-                getSeverityMatrix(TRITAN_MATRIX, severity)
-            );
-            break;
-        
-        default:
-            console.warn("Unknown shader filter: ", selectedFilter);
-            shaderCode += `
-                vec2 st = gl_FragCoord.xy / u_resolution;
-                gl_FragColor = texture2D(u_texture, st);
-            `;
-            break;
-    }
-    
-    shaderCode = shaderCode + `}`;
-    return shaderCode;
-}
-
-
-function applyViewShader(view) {
-    if (!view || !view.sandbox) return;
-
-    const fragmentSrc = generateGLSLShader(view.shaderType, view.shaderSeverity);
-
-    view.sandbox.load(fragmentSrc);
-
-    if (imageLoaded()) {
-        //console.log("is image");
-        view.sandbox.setUniform("u_texture", masterImageInstance.src);
-    }
-
-    else if (videoLoaded()) {
-        //console.log("is video");
-        view.sandbox.loadTexture("u_video", masterVideoInstance);
-    }
 }
 
 
